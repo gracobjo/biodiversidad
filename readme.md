@@ -91,7 +91,7 @@ python -m ipykernel install --user --name=gbif-py314 --display-name="Python 3.14
 
 * **Registros $\neq$ Individuos:** Un conteo de ocurrencias en GBIF mide esfuerzo de muestreo y reporte, nunca densidad ni tamaño poblacional. Un mismo ejemplar puede generar múltiples detecciones en cámaras de fototrampeo o rastros.
 * **Año 2026 en curso:** Los registros correspondientes a 2026 representan un año natural incompleto y no deben compararse directamente con series anuales cerradas.
-* **Consulta de metadatos:** Para conocer la definición exacta, tipo de dato y porcentaje de cobertura de cada columna del JSON bruto y del CSV exportado, consulta [`diccionario_datos_gbif.md`](./diccionario_datos_gbif.md).
+* **Consulta de metadatos:** Para conocer la definición exacta, tipo de dato y porcentaje de cobertura de cada columna del JSON bruto y del CSV exportado, consulta [`diccionario_datos_gbif.md`](./docs/diccionario_datos_gbif.md).
 
 ---
 
