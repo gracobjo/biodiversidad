@@ -24,6 +24,7 @@ Bienvenido a la documentación completa del proyecto de exploración de biodiver
   - Diagrama de entidad-relación
   - Diagrama de flujo de transformación de datos
 - ✅ **Guía de inicio rápido:** Instalación paso a paso en Windows
+- ✅ **Comparación de v7 (ES) y v4 (ES+PT):** filtros, muestras, CSV y mapas
 - ✅ **Troubleshooting:** Solución de problemas comunes
 
 **Lectura recomendada:** 15-20 minutos
@@ -119,6 +120,10 @@ Bienvenido a la documentación completa del proyecto de exploración de biodiver
 | `registros_gbif_brutos.json` | JSON | Respuesta raw del API (600 registros, 130 campos) | Fuente única de verdad; reutilizable offline |
 | `registros_biodiversidad_gbif.csv` | CSV | Dataset normalizado y transformado | Análisis BI, SQL, herramientas estadísticas |
 | `mapa_avistamientos_gbif.html` | HTML | Mapa interactivo Folium | Visualización web; compartir con stakeholders |
+| `registros_<especie>_es_pt.csv` | CSV | Registros seleccionados de ES+PT, exportados por v4 | Comparación territorial |
+| `mapa_<especie>_es_pt.html` | HTML | Mapa ES+PT generado por v4 | Visualización por país |
+
+Los dos cuadernos aplican el límite de descarga a ámbitos distintos; sus mapas no tienen por qué contener los mismos puntos españoles. Consulta [la comparación y el ejemplo de resultados](./MANUAL_USUARIO.md#comparación-de-los-cuadernos-y-mapas).
 
 ---
 
@@ -143,7 +148,7 @@ Bienvenido a la documentación completa del proyecto de exploración de biodiver
 - **usageKey (GBIF):** 5219173
 - **Registros descargados:** 600 (de 2,390 disponibles en GBIF para España 2020-2026)
 - **Distribución en muestra:** Noroeste (Galicia, Asturias, Castilla y León)
-- **Hallazgo crítico:** 47.5% de los registros son *Canis lupus familiaris* (perro doméstico)
+- **Hallazgo en la muestra de v7:** 47,5% de los registros tenían `specificEpithet == "familiaris"`; comprueba el nombre aceptado y los demás campos taxonómicos antes de interpretar cada registro.
 
 ### Período de Análisis
 - **Rango temporal:** 2020-2026

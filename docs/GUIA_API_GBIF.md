@@ -374,13 +374,9 @@ El `taxonKey=5219173` en GBIF agrupa:
 - *Canis lupus familiaris* (perro doméstico).
 - *Canis lupus dingo* (dingo australiano).
 
-**Solución:** Usar el campo `specificEpithet` para filtrar por subespecie:
-- `specificEpithet == 'lupus'` → lobo salvaje.
-- `specificEpithet == 'familiaris'` → perro doméstico.
+**Precaución:** En v7 se usa `specificEpithet` para agrupar registros con valores `lupus` y `familiaris`, pero este campo es el epíteto específico, no una identificación infalible de subespecie. Revisa también `scientificName`, `acceptedScientificName`, el rango y la ficha de cada registro antes de atribuirlo a lobo o perro. En v4 la ficha del mapa muestra el nombre del taxón consultado, que puede ser distinto del nombre del registro.
 
-En la descarga de 600 registros de España:
-- 315 de lobo salvaje (`lupus`).
-- 285 de perro doméstico (`familiaris`).
+En la muestra de v7 de 600 registros de España observada el 23 de noviembre de 2026 había 315 con `specificEpithet == 'lupus'` y 285 con `specificEpithet == 'familiaris'`. Son recuentos de esa muestra limitada, no estimaciones de población; pueden cambiar al ejecutar de nuevo. Para comparar con v4, consulta [Comparación de los cuadernos y mapas](./MANUAL_USUARIO.md#comparación-de-los-cuadernos-y-mapas).
 
 ---
 

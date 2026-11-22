@@ -465,7 +465,7 @@ uv venv --python 3.14 .venv
 .venv\Scripts\Activate.ps1
 
 # Instalar paquetes
-uv pip install requests pandas folium matplotlib ipykernel
+uv pip install requests pandas folium matplotlib seaborn ipykernel
 
 # Registrar kernel para Jupyter
 python -m ipykernel install --user --name=gbif-py314 --display-name="Python 3.14 (GBIF)"
@@ -476,6 +476,30 @@ python -m ipykernel install --user --name=gbif-py314 --display-name="Python 3.14
 2. Seleccionar kernel **Python 3.14 (GBIF)**.
 3. Ejecutar todas las celdas en orden (`Ctrl+Shift+Enter`).
 4. Revisar outputs y archivos generados.
+
+### Comparación de los cuadernos y mapas
+
+| Característica | v7: mortalidad en España | v4: exploración en ES y PT |
+|---|---|---|
+| Cuaderno | [`exploracion_biodiversidad_gbif_v7_mortalidad.ipynb`](../exploracion_biodiversidad_gbif_v7_mortalidad.ipynb) | [`exploracion_biodiversidad_gbif_v4_es_pt.ipynb`](../exploracion_biodiversidad_gbif_v4_es_pt.ipynb) |
+| Ámbito por defecto | España (`country=ES`) | España y Portugal (`country=ES` y `country=PT`) |
+| Consulta principal | *Canis lupus*, 2020–2026, con coordenadas y sin incidencias geoespaciales señaladas por GBIF | Mismos filtros de especie, periodo y calidad espacial, pero para ambos países. La especie y el periodo se configuran en el cuaderno |
+| Límite | Hasta 600 registros para ES | Hasta 600 registros **en total** para ES+PT, no 600 por país |
+| CSV | `registros_biodiversidad_gbif.csv`: campos enriquecidos, entre ellos `acceptedScientificName`, `specificEpithet`, `vitality` y territorios GADM | `registros_<especie>_es_pt.csv`: 13 columnas seleccionadas, entre ellas `scientificName`, `countryCode` y `stateProvince` |
+| Mapa | `mapa_avistamientos_gbif.html`: verde para `specificEpithet == "lupus"` y marrón para los demás valores; la ficha muestra el nombre aceptado cuando está disponible | `mapa_<especie>_es_pt.html`: verde para ES y rojo para PT; la ficha muestra el nombre oficial del taxón consultado, **no necesariamente el nombre propio del registro** |
+
+La coincidencia de filtros para España no implica que ambas **muestras** españolas sean iguales: al pedir ES+PT, los registros portugueses ocupan parte del límite de 600 y cambia el conjunto de resultados paginados. El límite es global y no garantiza una cuota para cada país. El orden, los datos publicados en GBIF y los totales pueden cambiar entre ejecuciones.
+
+**Ejemplo observado el 22–23 de noviembre de 2026**, con *Canis lupus* (`taxonKey=5219173`):
+
+- GBIF indicaba 2.390 registros para ES y 296 para PT con los filtros principales; 2.686 para ES+PT. Estos son totales disponibles, no tamaños de las descargas.
+- El mapa de v7 contenía 600 registros de ES. El de v4 contenía 534 de ES y 66 de PT. Compartían los 534 registros españoles, con las mismas coordenadas; los otros 66 registros españoles de v7 no aparecían en v4.
+- Ambas muestras eran parciales. Los agrupamientos de marcadores y el encuadre también pueden cambiar la apariencia al variar el zoom o el ámbito.
+- Por ejemplo, la ficha GBIF `6131493059` aparecía en ambos mapas: v7 mostraba *Canis lupus familiaris* como nombre aceptado, mientras v4 mostraba *Canis lupus* por ser el nombre consultado. El nombre registrado en ambos CSV era *Canis familiaris*. No debe interpretarse la etiqueta de v4 como identificación individual del registro.
+
+Los nombres binomiales simples se normalizan antes de consultar GBIF y se comprueba la coincidencia del nombre canónico. Para otros formatos, como nombres con autor, revisa el taxón resuelto. El `taxonKey` puede incluir registros relacionados con perros; consulta los campos taxonómicos de cada registro antes de sacar conclusiones.
+
+Para comparar resultados, usa los identificadores `key` y las coordenadas, mantén los mismos filtros y ámbito, y comprueba `total_disponible_gbif` y `MAX_REGISTROS`. Si el total supera el límite, las estadísticas sólo describen la muestra descargada, no todas las ocurrencias disponibles.
 
 ### Modo Offline (si ya tienes `registros_gbif_brutos.json`):
 ```python

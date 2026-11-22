@@ -230,7 +230,7 @@ registros_biodiversidad_gbif.csv
 
 mapa_avistamientos_gbif.html
 ├─ Mapa interactivo Folium
-├─ Capas separadas: lobo vs perro
+├─ Colores según el epíteto taxonómico del registro
 ├─ Clustering de marcadores
 ├─ Tooltips con metadatos
 └─ Uso: Abrir en navegador web
@@ -286,6 +286,10 @@ R: Sí. Simplemente cambia el nombre científico en `obtener_taxon_key("tu-espec
 
 **P: ¿Qué pasa si cambio los filtros (año, país)?**  
 R: La descarga se reajusta automáticamente. Revisa el diagnóstico progresivo para ver cuántos registros tienes.
+
+**P: ¿Por qué difieren los mapas de España y ES+PT?**
+
+R: El límite de 600 registros se aplica a ámbitos distintos, y los colores tienen significados diferentes. Consulta [la comparación de los cuadernos](./MANUAL_USUARIO.md#comparación-de-los-cuadernos-y-mapas).
 
 **P: ¿Cuál es la diferencia entre JSON y CSV?**  
 R: JSON es la respuesta bruta del API (130 campos, estructura compleja). CSV es una tabla simplificada con 60+ campos normalizados, lista para Excel/SQL.
