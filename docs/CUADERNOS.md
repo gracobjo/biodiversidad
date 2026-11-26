@@ -62,7 +62,7 @@ Fase A del pipeline MySQL descrito en `documentacion_del_pipeline_gbif_y_mysql_8
 
 Fase B. Lee MySQL con `src/consulta_gbif.py`: resumen, ocurrencias, filtro de lobo silvestre, territorio, datasets, campos dentro de `raw_json` y mapa Folium. No llama a la API.
 
-La copia renderizada de estos dos cuadernos está en `docs/exportaciones/`.
+La copia en Markdown de estos dos cuadernos, y la de `gbif_especies_por_clase_es_pt.ipynb`, está en `docs/exportaciones/`. El mapa Folium del análisis offline no se incrusta: queda en `salidas_gbif_multiespecie/mapa_ocurrencias_gbif.html`.
 
 ### `gbif_especies_por_clase_es_pt.ipynb`
 

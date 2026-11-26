@@ -2,7 +2,6 @@
 
 Este cuaderno ejecuta la extracción desde la API pública de GBIF (`/v1/species/match`, `/v1/occurrence/search` y catálogos del *Registry*) y persiste los datos de forma idempotente en la base de datos local `gbif_biodiversidad` mediante `src/volcarEndpoints.py`.
 
-
 ```python
 import sys
 import time
@@ -12,7 +11,7 @@ from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
 # Añadir carpeta src/ al path para importar volcarEndpoints y db_config
-ruta_src = Path("src").resolve()
+ruta_src = (Path.cwd() if (Path.cwd() / "src").exists() else Path.cwd().parent) / "src".resolve()
 if str(ruta_src) not in sys.path:
     sys.path.append(str(ruta_src))
 
@@ -25,12 +24,10 @@ print(f"Base de datos destino: {DB_CONFIG['database']} en {DB_CONFIG['host']}:{D
 
     Ruta src cargada: C:\Users\chuwi\Documents\biodiversidad\src
     Base de datos destino: gbif_biodiversidad en localhost:3306
-    
 
 ## 1. Configuración de parámetros de extracción
 
 Define aquí la especie, los países (`ES`, `PT`, etc.), el rango temporal y el límite máximo de registros por país (`None` para descargar todos los disponibles).
-
 
 ```python
 GBIF_API = "https://api.gbif.org/v1"
@@ -44,7 +41,6 @@ PAGE_SIZE = 300               # Máximo permitido por página en GBIF API
 ```
 
 ## 2. Sesión HTTP con reintentos y funciones de descarga
-
 
 ```python
 def crear_sesion_gbif() -> requests.Session:
@@ -133,7 +129,6 @@ def descargar_ocurrencias(
 
 ## 3. Ejecución de descarga y volcado a MySQL 8
 
-
 ```python
 sesion_gbif = crear_sesion_gbif()
 
@@ -179,13 +174,11 @@ guardar_en_mysql(
     [PT] Descargados 600 registros...
     [PT] Descargados 900 registros...
     [PT] Descargados 1000 registros...
-    
+
     Total registros listos para volcar: 2000
     Carga completada: 1 taxón, 12 organizaciones, 17 datasets y 2000 ocurrencias.
-    
 
 ## 4. Verificación rápida en MySQL
-
 
 ```python
 import pandas as pd
@@ -222,92 +215,10 @@ engine.dispose()
 df_verificacion
 ```
 
-
-
-
-<div>
-<style scoped>
-    .dataframe tbody tr th:only-of-type {
-        vertical-align: middle;
-    }
-
-    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-
-    .dataframe thead th {
-        text-align: right;
-    }
-</style>
-<table border="1" class="dataframe">
-  <thead>
-    <tr style="text-align: right;">
-      <th></th>
-      <th>pais</th>
-      <th>rango</th>
-      <th>epiteto</th>
-      <th>total_registros</th>
-      <th>anio_min</th>
-      <th>anio_max</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <th>0</th>
-      <td>ES</td>
-      <td>SPECIES</td>
-      <td>familiaris</td>
-      <td>526</td>
-      <td>2024</td>
-      <td>2026</td>
-    </tr>
-    <tr>
-      <th>1</th>
-      <td>ES</td>
-      <td>SPECIES</td>
-      <td>lupus</td>
-      <td>423</td>
-      <td>2024</td>
-      <td>2026</td>
-    </tr>
-    <tr>
-      <th>2</th>
-      <td>ES</td>
-      <td>SUBSPECIES</td>
-      <td>lupus</td>
-      <td>51</td>
-      <td>2024</td>
-      <td>2025</td>
-    </tr>
-    <tr>
-      <th>3</th>
-      <td>PT</td>
-      <td>SUBSPECIES</td>
-      <td>lupus</td>
-      <td>470</td>
-      <td>2013</td>
-      <td>2023</td>
-    </tr>
-    <tr>
-      <th>4</th>
-      <td>PT</td>
-      <td>SPECIES</td>
-      <td>lupus</td>
-      <td>457</td>
-      <td>2011</td>
-      <td>2026</td>
-    </tr>
-    <tr>
-      <th>5</th>
-      <td>PT</td>
-      <td>SPECIES</td>
-      <td>familiaris</td>
-      <td>73</td>
-      <td>2011</td>
-      <td>2026</td>
-    </tr>
-  </tbody>
-</table>
-</div>
-
-
+      pais       rango     epiteto  total_registros  anio_min  anio_max
+    0   ES     SPECIES  familiaris              526      2024      2026
+    1   ES     SPECIES       lupus              423      2024      2026
+    2   ES  SUBSPECIES       lupus               51      2024      2025
+    3   PT  SUBSPECIES       lupus              470      2013      2023
+    4   PT     SPECIES       lupus              457      2011      2026
+    5   PT     SPECIES  familiaris               73      2011      2026
