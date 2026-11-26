@@ -1,5 +1,6 @@
 import sys
 import time
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 import requests
 import truststore
@@ -27,6 +28,21 @@ def crear_sesion_gbif() -> requests.Session:
     session = requests.Session()
     session.headers.update({"User-Agent": "BiodiversidadGBIF-SQLite/1.0", "Accept": "application/json"})
     retry = Retry(total=5, backoff_factor=0.8, status_forcelist=[429, 500, 502, 503, 504], allowed_methods=["GET"])
+    session.mount("https://", HTTPAdapter(max_retries=retry))
+    return session
+
+
+def _sesion_catalogo() -> requests.Session:
+    """Sesión corta para el listado de especies: un reintento y sin esperar Retry-After."""
+    session = requests.Session()
+    session.headers.update({"User-Agent": "BiodiversidadGBIF-SQLite/1.0", "Accept": "application/json"})
+    retry = Retry(
+        total=1,
+        backoff_factor=0.3,
+        status_forcelist=[429, 500, 502, 503, 504],
+        allowed_methods=["GET"],
+        respect_retry_after_header=False,
+    )
     session.mount("https://", HTTPAdapter(max_retries=retry))
     return session
 
@@ -59,7 +75,7 @@ def listar_especies_con_coordenadas(
     y hasCoordinate=true. El nombre y la familia salen de GET /v1/species/{speciesKey}.
     """
     paises_consulta = list(paises or PAISES)
-    sesion = crear_sesion_gbif()
+    sesion = _sesion_catalogo()
 
     def aviso(mensaje: str) -> None:
         if on_progreso is not None:
@@ -74,34 +90,38 @@ def listar_especies_con_coordenadas(
 
     pendientes: list[tuple[str, int]] = []
     vistos: set[str] = set()
-    for nombre_clase in CLASES_A_MOSTRAR:
-        aviso(f"GET {GBIF_API}/species/match  name={nombre_clase}  rank=CLASS")
-        coincidencia = sesion.get(
-            f"{GBIF_API}/species/match",
-            params={"name": nombre_clase, "rank": "CLASS", "strict": "true"},
-            timeout=20,
-        )
-        coincidencia.raise_for_status()
+    for indice_clase, nombre_clase in enumerate(CLASES_A_MOSTRAR, start=1):
+        aviso(f"Clase {indice_clase}/{len(CLASES_A_MOSTRAR)}: {nombre_clase}")
+        try:
+            coincidencia = sesion.get(
+                f"{GBIF_API}/species/match",
+                params={"name": nombre_clase, "rank": "CLASS", "strict": "true"},
+                timeout=12,
+            )
+            coincidencia.raise_for_status()
+        except requests.RequestException as exc:
+            aviso(f"{nombre_clase}: no se pudo resolver la clase ({type(exc).__name__}). Se omite.")
+            continue
         taxon_clase = coincidencia.json()
         clave_clase = taxon_clase.get("usageKey")
         if not clave_clase or str(taxon_clase.get("rank", "")).upper() != "CLASS":
             aviso(f"{nombre_clase}: GBIF no devolvió una clase. Se omite.")
             continue
-        aviso(
-            f"GET {GBIF_API}/occurrence/search  facet=speciesKey  classKey={clave_clase}  "
-            f"{nombre_clase}  limite={limite}"
-        )
-        busqueda = sesion.get(
-            f"{GBIF_API}/occurrence/search",
-            params=[
-                *parametros_base(),
-                ("classKey", str(clave_clase)),
-                ("facet", "speciesKey"),
-                ("facetLimit", str(limite)),
-            ],
-            timeout=40,
-        )
-        busqueda.raise_for_status()
+        try:
+            busqueda = sesion.get(
+                f"{GBIF_API}/occurrence/search",
+                params=[
+                    *parametros_base(),
+                    ("classKey", str(clave_clase)),
+                    ("facet", "speciesKey"),
+                    ("facetLimit", str(limite)),
+                ],
+                timeout=20,
+            )
+            busqueda.raise_for_status()
+        except requests.RequestException as exc:
+            aviso(f"{nombre_clase}: la faceta de ocurrencias no respondió ({type(exc).__name__}). Se omite.")
+            continue
         faceta_especies = busqueda.json().get("facets") or []
         conteos = faceta_especies[0].get("counts", []) if faceta_especies else []
         for item in conteos:
@@ -111,23 +131,35 @@ def listar_especies_con_coordenadas(
             vistos.add(clave)
             pendientes.append((clave, int(item.get("count") or 0)))
 
-    especies: list[dict] = []
-    for indice, (clave, total) in enumerate(pendientes, start=1):
-        aviso(f"GET {GBIF_API}/species/{clave}  ({indice}/{len(pendientes)})")
-        ficha = sesion.get(f"{GBIF_API}/species/{clave}", timeout=20)
-        ficha.raise_for_status()
+    aviso(f"Nombres de {len(pendientes)} especies")
+
+    def ficha_especie(clave: str, total: int) -> dict | None:
+        try:
+            ficha = requests.get(
+                f"{GBIF_API}/species/{clave}",
+                timeout=12,
+                headers={"User-Agent": "BiodiversidadGBIF-SQLite/1.0", "Accept": "application/json"},
+            )
+            ficha.raise_for_status()
+        except requests.RequestException:
+            return None
         taxon = ficha.json()
         nombre = taxon.get("canonicalName") or taxon.get("scientificName") or clave
-        especies.append(
-            {
-                "nombre_cientifico": nombre,
-                "clase": taxon.get("class") or "",
-                "familia": taxon.get("family") or "",
-                "taxon_key": int(clave),
-                "ocurrencias_con_coordenadas": total,
-                "endpoint": f"{GBIF_API}/species/{clave}",
-            }
-        )
+        return {
+            "nombre_cientifico": nombre,
+            "clase": taxon.get("class") or "",
+            "familia": taxon.get("family") or "",
+            "taxon_key": int(clave),
+            "ocurrencias_con_coordenadas": total,
+            "endpoint": f"{GBIF_API}/species/{clave}",
+        }
+
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        fichas = list(pool.map(lambda par: ficha_especie(*par), pendientes))
+    omitidas = sum(1 for ficha in fichas if ficha is None)
+    if omitidas:
+        aviso(f"{omitidas} especies no respondieron y se omiten.")
+    especies = [ficha for ficha in fichas if ficha is not None]
     return _alternar_por_clase(especies, CLASES_A_MOSTRAR)
 
 
