@@ -46,6 +46,8 @@ La interfaz se abre con `python interfaz_gbif.py`. Antes de poblar o consultar, 
 
 El proyecto está diseñado para **Python 3.14** utilizando un entorno virtual aislado.
 
+El entorno virtual es la carpeta `.venv` de la raíz del proyecto. `uv sync` (o `pip`, en la opción B) instala ahí las dependencias de `pyproject.toml`. En un cuaderno se elige el kernel **Python (biodiversidad)**: es el nombre con el que se registra el intérprete `.venv\Scripts\python.exe` en Windows (`.venv/bin/python` en Linux y macOS).
+
 ### Opción A: Usando `uv` (recomendado)
 
 ```bash
@@ -60,11 +62,10 @@ uv venv --python 3.14 .venv
 # source .venv/bin/activate
 
 uv sync --system-certs
-uv pip install matplotlib seaborn
 .venv\Scripts\python.exe -m ipykernel install --user --name=biodiversidad --display-name="Python (biodiversidad)"
 ```
 
-`uv sync` instala lo declarado en `pyproject.toml`, `ipykernel` incluido. En la red de la Junta hace falta `--system-certs`. `matplotlib` y `seaborn` solo los piden los cuadernos de exploración. El kernel de los cuadernos es **Python (biodiversidad)**.
+`uv sync` instala exactamente lo declarado en `pyproject.toml` (`matplotlib`, `seaborn` e `ipykernel` incluidos). Si no sabes si `.venv` ya tiene todas las librerías, vuelve a lanzarlo: completa lo que falte. En la red de la Junta hace falta `--system-certs`.
 
 ### Opción B: Usando `venv` y `pip`
 

@@ -1,6 +1,8 @@
 # Cuadernos del proyecto
 
-Los cuadernos viven en `notebooks/`. Se abren con Jupyter o con el editor, usando el entorno del proyecto (Python 3.14, dependencias de `pyproject.toml`).
+Los cuadernos viven en `notebooks/`. Se abren con Jupyter o con el editor.
+
+El entorno virtual es la carpeta `.venv` de la raíz (Python 3.14, dependencias de `pyproject.toml`). `uv sync` instala ahí las librerías. En Jupyter o VS Code se elige el kernel **Python (biodiversidad)**: es el nombre con el que se registra el intérprete `.venv\Scripts\python.exe`.
 
 Las rutas de salida ya no dependen de la carpeta desde la que se lance el kernel. Si el directorio de trabajo es la raíz del proyecto o `notebooks/`, los CSV, JSON y HTML van a `salidas_gbif_multiespecie/` y el JSON bruto de la exploración a `datos/registros_gbif_brutos.json`.
 
@@ -8,8 +10,8 @@ Ejecución habitual:
 
 1. Activar el entorno (`.venv\Scripts\Activate.ps1`).
 2. Abrir el cuaderno.
-3. Elegir el kernel **Python (biodiversidad)**. Es el intérprete `.venv\Scripts\python.exe`.
-4. Ejecutar las celdas en orden. Si una celda se queda en `[*]` y no imprime el intérprete, el kernel no es ese: interrumpe y vuelve a lanzarla.
+3. Elegir el kernel **Python (biodiversidad)**.
+4. Ejecutar las celdas en orden. Si una celda se queda en `[*]` y no imprime el intérprete, interrumpe y vuelve a lanzarla con ese kernel.
 
 La interfaz de escritorio no es un cuaderno. El archivo está en la raíz: `python interfaz_gbif.py`. Antes de Poblar o de Consultas, la base tiene que estar iniciada: en SQLite, el archivo `datos/gbif_biodiversidad.sqlite` con el esquema creado; en MySQL, el servidor en marcha y la base `gbif_biodiversidad` creada.
 
@@ -66,7 +68,7 @@ La copia en Markdown de estos dos cuadernos, y la de `gbif_especies_por_clase_es
 
 ### `gbif_especies_por_clase_es_pt.ipynb`
 
-Catálogo para ver especies antes de lanzar el multi-especie. Usa la misma función que el botón **Especies con coordenadas** de la interfaz: cinco especies con coordenadas de Mammalia, Squamata, Amphibia, Insecta, Magnoliopsida, Liliopsida y Aves, en España y Portugal (2000–2026). Muestra clase, familia y el recuento, y guarda `salidas_gbif_multiespecie/especies_por_clase_es_pt.csv`. No descarga ocurrencias ni crea base de datos. Si una clase no responde, se omite y la celda termina con el resto. Los nombres se pueden copiar a `ESPECIES_OBJETIVO` de `gbif_multiespecie_es_pt.ipynb`. El kernel tiene que ser **Python (biodiversidad)**.
+Catálogo para ver especies antes de lanzar el multi-especie. Usa la misma función que el botón **Especies con coordenadas** de la interfaz: cinco especies con coordenadas de Mammalia, Squamata, Amphibia, Insecta, Magnoliopsida, Liliopsida y Aves, en España y Portugal (2000–2026). Muestra clase, familia y el recuento, y guarda `salidas_gbif_multiespecie/especies_por_clase_es_pt.csv`. No descarga ocurrencias ni crea base de datos. Si una clase no responde, se omite y la celda termina con el resto. Los nombres se pueden copiar a `ESPECIES_OBJETIVO` de `gbif_multiespecie_es_pt.ipynb`. El kernel tiene que ser **Python (biodiversidad)** (el intérprete de `.venv`).
 
 ### `gbif_multiespecie_es_pt.ipynb`
 

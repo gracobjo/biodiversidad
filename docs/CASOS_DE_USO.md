@@ -159,7 +159,7 @@ Actores: persona investigadora, persona analista, persona ingeniera de datos. La
 
 **Disparador.** El ranking global de GBIF solo muestra aves y hace falta ver también mamíferos, escamosos, anfibios, insectos y plantas.
 
-**Precondición.** Hay red. El cuaderno se ejecuta con el kernel **Python (biodiversidad)**, el intérprete de `.venv`. Si después se va a poblar o consultar la base, tiene que estar iniciada.
+**Precondición.** Hay red. El entorno virtual es la carpeta `.venv`. El cuaderno se ejecuta con el kernel **Python (biodiversidad)**, que usa ese intérprete. Si después se va a poblar o consultar la base, tiene que estar iniciada.
 
 **Flujo.**
 

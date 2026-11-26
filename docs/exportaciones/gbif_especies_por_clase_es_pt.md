@@ -13,7 +13,7 @@ Sirve para **ver las especies** antes de elegir cuáles bajar. Un ranking único
 
 La misma lista la muestra la interfaz, en el botón **Especies con coordenadas**.
 
-El kernel del cuaderno es **Python (biodiversidad)**, el intérprete `.venv\Scripts\python.exe`. Si una celda se queda en `[*]` y no imprime el intérprete, interrumpe la ejecución y vuelve a lanzarla con ese kernel. Si una clase no responde, se omite y la celda termina con el resto.
+El entorno virtual es la carpeta `.venv`. El kernel del cuaderno es **Python (biodiversidad)** (intérprete `.venv\Scripts\python.exe`). Si una celda se queda en `[*]` y no imprime el intérprete, interrumpe la ejecución y vuelve a lanzarla con ese kernel. Si una clase no responde, se omite y la celda termina con el resto.
 
 ```python
 import sys

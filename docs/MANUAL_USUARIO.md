@@ -473,21 +473,19 @@ uv venv --python 3.14 .venv
 # Activar (PowerShell)
 .venv\Scripts\Activate.ps1
 
-# Instalar las dependencias del proyecto, ipykernel incluido
+# Instala exactamente lo declarado en pyproject.toml (matplotlib, seaborn e ipykernel incluidos).
+# Si no sabes si el entorno ya tiene todas las librerías, vuelve a lanzarlo.
 uv sync --system-certs
-
-# matplotlib y seaborn los usan los cuadernos de exploración y no están en pyproject.toml
-uv pip install matplotlib seaborn
 
 # Registrar kernel para Jupyter
 .venv\Scripts\python.exe -m ipykernel install --user --name=biodiversidad --display-name="Python (biodiversidad)"
 ```
 
-En la red de la Junta, `uv` necesita `--system-certs`. Si no, el certificado del proxy Netskope corta la descarga de paquetes.
+El entorno virtual es la carpeta `.venv`. El kernel **Python (biodiversidad)** es el nombre con el que Jupyter muestra el intérprete `.venv\Scripts\python.exe`. En la red de la Junta, `uv` necesita `--system-certs`. Si no, el certificado del proxy Netskope corta la descarga de paquetes.
 
 ### Ejecución:
 1. Abrir `notebooks/exploracion_biodiversidad_gbif_v7_mortalidad.ipynb`.
-2. Seleccionar kernel **Python (biodiversidad)**. El intérprete es `.venv\Scripts\python.exe`.
+2. Seleccionar el kernel **Python (biodiversidad)**.
 3. Ejecutar todas las celdas en orden.
 4. Revisar salidas en `datos/` y `salidas_gbif_multiespecie/`.
 
