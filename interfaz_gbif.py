@@ -5,6 +5,7 @@ from __future__ import annotations
 import queue
 import sys
 import threading
+import unicodedata
 import tkinter as tk
 import webbrowser
 from pathlib import Path
@@ -30,6 +31,7 @@ from servicio_bd import (
 
 MAX_FILAS_TABLA = 400
 COLUMNAS_VISIBLES = 12
+ESPECIE_DEFECTO = "Canis lupus"
 
 
 class AplicacionGbif(tk.Tk):
@@ -45,8 +47,14 @@ class AplicacionGbif(tk.Tk):
         self._botones: list[ttk.Button] = []
         self.df_actual: pd.DataFrame | None = None
         self.df_ocurrencias: pd.DataFrame | None = None
+        self._tabla_es_catalogo = False
+        self.especie_tabla: str | None = None
+        self.aviso_api = tk.StringVar()
+        self.aviso_base = tk.StringVar()
+        self.aviso_consultas = tk.StringVar()
+        self.aviso_exportar = tk.StringVar()
 
-        self.especie = tk.StringVar(value="Canis lupus")
+        self.especie = tk.StringVar(value=ESPECIE_DEFECTO)
         self.paises = tk.StringVar(value="ES, PT")
         self.anios = tk.StringVar(value="2000,2026")
         self.max_registros = tk.StringVar(value="1000")
@@ -67,7 +75,9 @@ class AplicacionGbif(tk.Tk):
         self.filtro_epiteto = tk.StringVar(value="")
         self.estado = tk.StringVar(value="Listo. La base SQLite ya puede consultarse sin llamar a la API.")
 
+        self.especie.trace_add("write", self._refrescar_avisos_especie)
         self._construir()
+        self._refrescar_avisos_especie()
         self._prellenar_mysql()
         self._al_cambiar_motor()
         self.after(120, self._bombear)
@@ -91,8 +101,21 @@ class AplicacionGbif(tk.Tk):
         for columna in range(8):
             caja.columnconfigure(columna, weight=1)
 
-        ttk.Label(caja, text="Especie").grid(row=0, column=0, sticky="w")
-        ttk.Entry(caja, textvariable=self.especie, width=22).grid(row=1, column=0, sticky="ew", padx=(0, 8))
+        ttk.Label(
+            caja,
+            text="Especie\nGET /v1/occurrence/search\nfacet=speciesKey y hasCoordinate=true",
+            justify="left",
+        ).grid(row=0, column=0, sticky="w")
+        marco_especie = ttk.Frame(caja)
+        marco_especie.grid(row=1, column=0, sticky="ew", padx=(0, 8))
+        marco_especie.columnconfigure(0, weight=1)
+        self.combo_especie = ttk.Combobox(marco_especie, textvariable=self.especie, width=22)
+        self.combo_especie.grid(row=0, column=0, sticky="ew")
+        self.combo_especie.bind("<<ComboboxSelected>>", self._al_elegir_especie)
+        self._boton(marco_especie, "Limpiar", self._limpiar_especie).grid(row=0, column=1, padx=(6, 0))
+        self.grupo = tk.StringVar(value="Clase y familia: pulsa Especies con coordenadas.")
+        ttk.Label(marco_especie, textvariable=self.grupo).grid(row=1, column=0, columnspan=2, sticky="w", pady=(4, 0))
+        self._catalogo_especies: dict[str, dict] = {}
         ttk.Label(caja, text="Países").grid(row=0, column=1, sticky="w")
         ttk.Entry(caja, textvariable=self.paises, width=16).grid(row=1, column=1, sticky="ew", padx=(0, 8))
         ttk.Label(caja, text="Años").grid(row=0, column=2, sticky="w")
@@ -146,24 +169,29 @@ class AplicacionGbif(tk.Tk):
         ttk.Label(
             api,
             text=(
-                "Endpoints:  /v1/species/match     /v1/occurrence/search\n"
+                "Especies del desplegable: 5 por clase (mamíferos, escamosos, anfibios,\n"
+                "insectos, plantas y aves), aunque tengan menos registros que las aves.\n"
+                "Clase: GET /v1/species/match?rank=CLASS.  Especies: GET /v1/occurrence/search?classKey=&facet=speciesKey&hasCoordinate=true.\n"
+                "Nombre de cada especie:  GET /v1/species/{speciesKey}\n"
+                "Taxón elegido:  GET /v1/species/match     Ocurrencias:  GET /v1/occurrence/search\n"
                 "Al poblar la base también se leen  /v1/organization/{key}  y  /v1/dataset/{key}."
             ),
+            justify="left",
         ).pack(anchor="w")
+        ttk.Label(api, textvariable=self.aviso_api).pack(anchor="w", pady=(6, 0))
         fila_api = ttk.Frame(api)
         fila_api.pack(anchor="w", pady=(8, 0))
-        self._boton(fila_api, "Ver taxón", self._ver_taxon).pack(side="left")
+        self._boton(fila_api, "Especies con coordenadas", self._cargar_especies).pack(side="left")
+        self._boton(fila_api, "Ver taxón", self._ver_taxon).pack(side="left", padx=(8, 0))
         self._boton(fila_api, "Ver ocurrencias", self._ver_ocurrencias).pack(side="left", padx=(8, 0))
 
-        ttk.Label(
-            base,
-            text="Crear aplica el esquema. Poblar descarga el lote de arriba y lo guarda de forma idempotente.",
-        ).pack(anchor="w")
+        ttk.Label(base, textvariable=self.aviso_base).pack(anchor="w")
         fila_base = ttk.Frame(base)
         fila_base.pack(anchor="w", pady=(8, 0))
         self._boton(fila_base, "Crear base de datos", self._crear_base).pack(side="left")
         self._boton(fila_base, "Poblar base de datos", self._poblar_base).pack(side="left", padx=(8, 0))
 
+        ttk.Label(consultas, textvariable=self.aviso_consultas).pack(anchor="w", pady=(0, 6))
         filtros = ttk.Frame(consultas)
         filtros.pack(anchor="w")
         ttk.Checkbutton(filtros, text="Solo lobo silvestre", variable=self.solo_lobo).pack(side="left")
@@ -182,10 +210,7 @@ class AplicacionGbif(tk.Tk):
         self._boton(fila_consultas, "Datasets", self._consulta_datasets).pack(side="left", padx=(8, 0))
         self._boton(fila_consultas, "Campos JSON", self._consulta_json).pack(side="left", padx=(8, 0))
 
-        ttk.Label(
-            exportar,
-            text="Exporta la tabla que está ahora en pantalla. El mapa usa las filas que tienen coordenadas.",
-        ).pack(anchor="w")
+        ttk.Label(exportar, textvariable=self.aviso_exportar).pack(anchor="w")
         fila_exportar = ttk.Frame(exportar)
         fila_exportar.pack(anchor="w", pady=(8, 0))
         self._boton(fila_exportar, "Exportar CSV", self._exportar_csv).pack(side="left")
@@ -219,6 +244,7 @@ class AplicacionGbif(tk.Tk):
         scroll_y = ttk.Scrollbar(caja, orient="vertical", command=self.tree.yview)
         scroll_x = ttk.Scrollbar(caja, orient="horizontal", command=self.tree.xview)
         self.tree.configure(yscrollcommand=scroll_y.set, xscrollcommand=scroll_x.set)
+        self.tree.bind("<<TreeviewSelect>>", self._al_pulsar_especie_catalogo)
         self.tree.grid(row=1, column=0, sticky="nsew")
         scroll_y.grid(row=1, column=1, sticky="ns")
         scroll_x.grid(row=2, column=0, sticky="ew")
@@ -249,9 +275,9 @@ class AplicacionGbif(tk.Tk):
         for entrada in self._entradas_mysql:
             entrada.configure(state=estado)
 
-    def _parametros(self) -> dict:
+    def _parametros(self, exigir_especie: bool = True) -> dict:
         especie = self.especie.get().strip()
-        if not especie:
+        if exigir_especie and not especie:
             raise ValueError("Indica el nombre científico.")
         paises = [parte.strip().upper() for parte in self.paises.get().split(",") if parte.strip()]
         if not paises:
@@ -305,11 +331,11 @@ class AplicacionGbif(tk.Tk):
         consulta_gbif.usar_config(parametros["mysql"])
         return consulta_gbif
 
-    def _lanzar(self, trabajo) -> None:
+    def _lanzar(self, trabajo, exigir_especie: bool = True) -> None:
         if self._ocupado:
             return
         try:
-            parametros = self._parametros()
+            parametros = self._parametros(exigir_especie=exigir_especie)
         except ValueError as exc:
             messagebox.showerror("Datos incompletos", str(exc))
             return
@@ -339,9 +365,16 @@ class AplicacionGbif(tk.Tk):
                     self._escribir_log(str(carga))
                     self.estado.set(str(carga).split("\n")[-1][:180])
                 elif tipo == "df":
-                    self._pintar_df(carga)
+                    df, especie = carga
+                    self.especie_tabla = especie
+                    self._pintar_df(df)
+                elif tipo == "especies":
+                    self.especie_tabla = None
+                    self._aplicar_catalogo(carga)
                 elif tipo == "ocurrencias":
-                    self.df_ocurrencias, nota = carga
+                    df, nota, especie = carga
+                    self.especie_tabla = especie
+                    self.df_ocurrencias = df
                     self._mostrar_ocurrencias_filtradas(nota)
                 elif tipo == "error":
                     self._escribir_log(str(carga))
@@ -366,11 +399,25 @@ class AplicacionGbif(tk.Tk):
     def _avisar(self, mensaje: str) -> None:
         self._cola.put(("log", mensaje))
 
-    def _publicar_df(self, df: pd.DataFrame) -> None:
-        self._cola.put(("df", df))
+    def _publicar_df(self, df: pd.DataFrame, especie: str | None = None) -> None:
+        self._cola.put(("df", (df, especie)))
 
-    def _publicar_ocurrencias(self, df: pd.DataFrame, nota: str = "") -> None:
-        self._cola.put(("ocurrencias", (df, nota)))
+    def _publicar_ocurrencias(self, df: pd.DataFrame, nota: str = "", especie: str | None = None) -> None:
+        self._cola.put(("ocurrencias", (df, nota, especie)))
+
+    def _refrescar_avisos_especie(self, *_args) -> None:
+        nombre = self.especie.get().strip() or ESPECIE_DEFECTO
+        slug = _slug_especie(nombre)
+        self.aviso_api.set(f"Ver taxón, Ver ocurrencias y Poblar usan {nombre}.")
+        self.aviso_base.set(f"Crear aplica el esquema. Poblar descarga {nombre} y lo guarda.")
+        self.aviso_consultas.set(f"Las consultas de la base se limitan a {nombre}.")
+        self.aviso_exportar.set(
+            f"CSV, JSON y HTML de {nombre}. El fichero se propone como {slug} "
+            "y la especie aparece dentro."
+        )
+
+    def _solo_lobo_aplicable(self, parametros: dict) -> bool:
+        return parametros["solo_lobo"] and parametros["especie"].lower().startswith("canis lupus")
 
     def _criterios_filtro(self) -> dict:
         anio_txt = self.filtro_anio.get().strip()
@@ -422,8 +469,9 @@ class AplicacionGbif(tk.Tk):
         self._escribir_log(texto)
         self.estado.set(texto)
 
-    def _pintar_df(self, df: pd.DataFrame, anunciar: bool = True) -> None:
+    def _pintar_df(self, df: pd.DataFrame, anunciar: bool = True, es_catalogo: bool = False) -> None:
         self.df_actual = df
+        self._tabla_es_catalogo = bool(es_catalogo) and df is not None and not df.empty
         self.tree.delete(*self.tree.get_children())
         if df is None or df.empty:
             self.tree.configure(displaycolumns=())
@@ -457,13 +505,75 @@ class AplicacionGbif(tk.Tk):
             aviso += f" En pantalla: {len(vista)} filas y {len(columnas)} columnas. La exportación usa la tabla completa."
         self._escribir_log(aviso)
 
+    def _limpiar_especie(self) -> None:
+        self.especie.set(ESPECIE_DEFECTO)
+        self.estado.set(f"Especie: {ESPECIE_DEFECTO}")
+        self._al_elegir_especie()
+
+    def _al_elegir_especie(self, _evento=None) -> None:
+        nombre = self.especie.get().strip()
+        ficha = self._catalogo_especies.get(nombre)
+        if not ficha:
+            self.grupo.set("Clase y familia: esta especie no está en el catálogo cargado.")
+            return
+        clase = ficha.get("clase") or "—"
+        familia = ficha.get("familia") or "—"
+        clave = ficha.get("taxon_key")
+        self.grupo.set(f"Clase: {clase}    Familia: {familia}")
+        self._escribir_log(f"{nombre}: clase {clase}, familia {familia}. GET https://api.gbif.org/v1/species/{clave}")
+        self.estado.set(f"{nombre}  ·  {clase}  ·  {familia}")
+
+    def _aplicar_catalogo(self, filas: list[dict]) -> None:
+        self._catalogo_especies = {str(fila["nombre_cientifico"]): fila for fila in filas}
+        nombres = list(self._catalogo_especies)
+        self.combo_especie.configure(values=nombres)
+        self._pintar_df(pd.DataFrame(filas), anunciar=False, es_catalogo=True)
+        self._escribir_log(
+            f"{len(filas)} especies con coordenadas. "
+            "Pulsa una fila para copiarla arriba. El cuadro sigue en Canis lupus hasta entonces."
+        )
+
+    def _al_pulsar_especie_catalogo(self, _evento=None) -> None:
+        if not self._tabla_es_catalogo:
+            return
+        seleccion = self.tree.selection()
+        if not seleccion:
+            return
+        valores = self.tree.item(seleccion[0], "values")
+        if not valores or not str(valores[0]).strip():
+            return
+        nombre = str(valores[0]).strip()
+        self.especie.set(nombre)
+        self._al_elegir_especie()
+
+    def _cargar_especies(self) -> None:
+        def trabajo(parametros: dict) -> str:
+            from ingesta_gbif_sqlite import listar_especies_con_coordenadas
+
+            filas = listar_especies_con_coordenadas(
+                paises=parametros["paises"],
+                year_range=parametros["year_range"],
+                on_progreso=self._avisar,
+            )
+            self._cola.put(("especies", filas))
+            clases = sorted({str(fila.get("clase") or "") for fila in filas if fila.get("clase")})
+            return (
+                f"Catálogo listo: {len(filas)} especies de {len(clases)} clases "
+                f"({', '.join(clases)}). "
+                "Clase: GET /v1/species/match?rank=CLASS. "
+                "Especies de cada clase: GET /v1/occurrence/search?classKey=&facet=speciesKey&hasCoordinate=true. "
+                "Nombre: GET /v1/species/{{speciesKey}}."
+            )
+
+        self._lanzar(trabajo, exigir_especie=False)
+
     def _ver_taxon(self) -> None:
         def trabajo(parametros: dict) -> str:
             self._avisar(f"GET https://api.gbif.org/v1/species/match  name={parametros['especie']}")
             taxon = consultar_taxon(parametros["especie"])
-            self._publicar_df(tabla_taxon(taxon))
+            self._publicar_df(tabla_taxon(taxon), especie=parametros["especie"])
             return (
-                f"Taxón resuelto: {taxon.get('scientificName')} "
+                f"Taxón de {parametros['especie']}: {taxon.get('scientificName')} "
                 f"(usageKey={taxon.get('usageKey')}, {taxon.get('status')})."
             )
 
@@ -484,6 +594,7 @@ class AplicacionGbif(tk.Tk):
             self._publicar_ocurrencias(
                 tabla_desde_registros_gbif(registros),
                 "Aún no están guardadas en la base.",
+                especie=parametros["especie"],
             )
             return ""
 
@@ -514,9 +625,9 @@ class AplicacionGbif(tk.Tk):
 
     def _consulta_resumen(self) -> None:
         def trabajo(parametros: dict) -> str:
-            df = self._modulo_consulta(parametros).obtener_resumen_general()
-            self._publicar_df(df)
-            return f"Resumen de {parametros['motor']}."
+            df = self._modulo_consulta(parametros).obtener_resumen_general(especie=parametros["especie"])
+            self._publicar_df(df, especie=parametros["especie"])
+            return f"Resumen de {parametros['especie']} en {parametros['motor']}."
 
         self._lanzar(trabajo)
 
@@ -524,35 +635,45 @@ class AplicacionGbif(tk.Tk):
         def trabajo(parametros: dict) -> str:
             df = self._modulo_consulta(parametros).cargar_ocurrencias(
                 paises=parametros["paises"],
-                solo_lobo_silvestre=parametros["solo_lobo"],
+                solo_lobo_silvestre=self._solo_lobo_aplicable(parametros),
                 anio_min=parametros["anio_min"],
+                especie=parametros["especie"],
             )
-            self._publicar_ocurrencias(df)
+            self._publicar_ocurrencias(df, especie=parametros["especie"])
             return ""
 
         self._lanzar(trabajo)
 
     def _consulta_territorio(self) -> None:
         def trabajo(parametros: dict) -> str:
-            df = self._modulo_consulta(parametros).resumen_territorial_por_comunidad(parametros["pais_territorio"])
-            self._publicar_df(df)
-            return f"Distribución territorial de {parametros['pais_territorio']}."
+            df = self._modulo_consulta(parametros).resumen_territorial_por_comunidad(
+                parametros["pais_territorio"],
+                especie=parametros["especie"],
+            )
+            self._publicar_df(df, especie=parametros["especie"])
+            return f"Territorio de {parametros['especie']} en {parametros['pais_territorio']}."
 
         self._lanzar(trabajo)
 
     def _consulta_datasets(self) -> None:
         def trabajo(parametros: dict) -> str:
-            df = self._modulo_consulta(parametros).top_datasets_publicadores(parametros["limite"])
-            self._publicar_df(df)
-            return f"Top {parametros['limite']} datasets."
+            df = self._modulo_consulta(parametros).top_datasets_publicadores(
+                parametros["limite"],
+                especie=parametros["especie"],
+            )
+            self._publicar_df(df, especie=parametros["especie"])
+            return f"Top {parametros['limite']} datasets de {parametros['especie']}."
 
         self._lanzar(trabajo)
 
     def _consulta_json(self) -> None:
         def trabajo(parametros: dict) -> str:
-            df = self._modulo_consulta(parametros).consultar_campos_raw_json(parametros["limite"])
-            self._publicar_df(df)
-            return f"Campos leídos de raw_json (límite {parametros['limite']})."
+            df = self._modulo_consulta(parametros).consultar_campos_raw_json(
+                parametros["limite"],
+                especie=parametros["especie"],
+            )
+            self._publicar_df(df, especie=parametros["especie"])
+            return f"Campos JSON de {parametros['especie']} (límite {parametros['limite']})."
 
         self._lanzar(trabajo)
 
@@ -575,47 +696,118 @@ class AplicacionGbif(tk.Tk):
             return None
         return Path(ruta)
 
-    def _exportar_csv(self) -> None:
+    def _datos_exportacion(self) -> tuple[pd.DataFrame, str] | None:
         df = self._exigir_tabla()
         if df is None:
+            return None
+        especie = self.especie.get().strip() or ESPECIE_DEFECTO
+        recorte = _filas_de_especie(df, especie)
+        if recorte is not None:
+            if recorte.empty:
+                messagebox.showinfo(
+                    especie,
+                    f"La tabla no tiene filas de {especie}. "
+                    "Pulsa Ver ocurrencias u Ocurrencias para esa especie.",
+                )
+                return None
+            return recorte, especie
+        if self.especie_tabla and self.especie_tabla.lower() != especie.lower():
+            messagebox.showinfo(
+                especie,
+                f"La tabla en pantalla es de {self.especie_tabla}. "
+                f"Vuelve a lanzar la consulta para {especie}.",
+            )
+            return None
+        return df, especie
+
+    def _exportar_csv(self) -> None:
+        datos = self._datos_exportacion()
+        if datos is None:
             return
-        ruta = self._elegir_ruta("Exportar CSV", "ocurrencias_gbif.csv", [("CSV", "*.csv")])
+        df, especie = datos
+        ruta = self._elegir_ruta(
+            f"Exportar CSV de {especie}",
+            f"{_slug_especie(especie)}.csv",
+            [("CSV", "*.csv")],
+        )
         if ruta is None:
             return
-        destino = exportar_csv(df, ruta)
-        self._escribir_log(f"CSV guardado en {destino}")
-        self.estado.set(f"CSV guardado en {destino}")
+        destino = exportar_csv(df, ruta, especie=especie)
+        self._escribir_log(f"CSV de {especie} guardado en {destino}")
+        self.estado.set(f"CSV de {especie} guardado en {destino}")
 
     def _exportar_json(self) -> None:
-        df = self._exigir_tabla()
-        if df is None:
+        datos = self._datos_exportacion()
+        if datos is None:
             return
-        ruta = self._elegir_ruta("Exportar JSON", "ocurrencias_gbif.json", [("JSON", "*.json")])
+        df, especie = datos
+        ruta = self._elegir_ruta(
+            f"Exportar JSON de {especie}",
+            f"{_slug_especie(especie)}.json",
+            [("JSON", "*.json")],
+        )
         if ruta is None:
             return
-        destino = exportar_json(df, ruta)
-        self._escribir_log(f"JSON guardado en {destino}")
-        self.estado.set(f"JSON guardado en {destino}")
+        destino = exportar_json(df, ruta, especie=especie)
+        self._escribir_log(f"JSON de {especie} guardado en {destino}")
+        self.estado.set(f"JSON de {especie} guardado en {destino}")
 
     def _exportar_mapa(self) -> None:
-        df = self._exigir_tabla()
-        if df is None:
+        datos = self._datos_exportacion()
+        if datos is None:
             return
-        ruta = self._elegir_ruta("Guardar mapa", "mapa_ocurrencias_gbif.html", [("HTML", "*.html")])
+        df, especie = datos
+        ruta = self._elegir_ruta(
+            f"Guardar mapa de {especie}",
+            f"{_slug_especie(especie)}.html",
+            [("HTML", "*.html")],
+        )
         if ruta is None:
             return
         try:
-            destino, puntos, recortado = exportar_mapa_html(df, ruta)
+            destino, puntos, recortado = exportar_mapa_html(df, ruta, especie=especie)
         except Exception as exc:
-            messagebox.showerror("Mapa", str(exc))
+            messagebox.showerror(especie, str(exc))
             self._escribir_log(f"{type(exc).__name__}: {exc}")
             return
-        aviso = f"Mapa con {puntos} puntos guardado en {destino}"
+        aviso = f"Mapa de {especie} con {puntos} puntos guardado en {destino}"
         if recortado:
             aviso += " Se han dejado fuera los registros que superaban el tope del mapa."
         self._escribir_log(aviso)
-        self.estado.set(f"Mapa guardado en {destino}")
+        self.estado.set(f"Mapa de {especie} guardado en {destino}")
         webbrowser.open(destino.resolve().as_uri())
+
+
+_COLUMNAS_ESPECIE = (
+    "nombre_cientifico",
+    "scientificName",
+    "acceptedScientificName",
+    "scientific_name",
+    "canonicalName",
+    "species",
+    "especie",
+)
+
+
+def _slug_especie(nombre: str) -> str:
+    base = unicodedata.normalize("NFKD", nombre).encode("ascii", "ignore").decode("ascii")
+    limpio = "".join(caracter.lower() if caracter.isalnum() else "_" for caracter in base)
+    while "__" in limpio:
+        limpio = limpio.replace("__", "_")
+    return limpio.strip("_") or "especie"
+
+
+def _filas_de_especie(df: pd.DataFrame, especie: str) -> pd.DataFrame | None:
+    nombre = especie.strip().lower()
+    columnas = [columna for columna in _COLUMNAS_ESPECIE if columna in df.columns]
+    if not columnas:
+        return None
+    mascara = pd.Series(False, index=df.index)
+    for columna in columnas:
+        texto = df[columna].astype(str).str.strip().str.lower()
+        mascara = mascara | texto.eq(nombre) | texto.str.startswith(f"{nombre} ") | texto.str.startswith(f"{nombre},")
+        mascara = mascara | texto.str.startswith(nombre)
+    return df.loc[mascara]
 
 
 def main() -> None:

@@ -28,6 +28,7 @@ Trabajar con datos abiertos de biodiversidad requiere ir más allá de descargar
 ├── interfaz_gbif.py                   # Interfaz Tkinter
 ├── notebooks/                         # Cuadernos. Guía: docs/CUADERNOS.md
 │   ├── exploracion_biodiversidad_gbif_v7_mortalidad.ipynb
+│   ├── gbif_especies_por_clase_es_pt.ipynb
 │   ├── gbif_multiespecie_es_pt.ipynb
 │   └── gbif_multiespecie_es_pt_sqlite_mysql.ipynb
 ├── src/                               # Ingesta y consultas
@@ -37,7 +38,7 @@ Trabajar con datos abiertos de biodiversidad requiere ir más allá de descargar
 └── readme.md
 ```
 
-La interfaz se abre con `python interfaz_gbif.py`. El cuaderno de mortalidad está en `notebooks/exploracion_biodiversidad_gbif_v7_mortalidad.ipynb`. El JSON bruto está en `datos/registros_gbif_brutos.json`.
+La interfaz se abre con `python interfaz_gbif.py`. Antes de poblar o consultar, la base tiene que estar iniciada: `datos/gbif_biodiversidad.sqlite` ya creado, o MySQL 8 en marcha con la base `gbif_biodiversidad`. **Especies con coordenadas** muestra cinco especies de cada clase, con familia; las consultas y la exportación siguen a la especie elegida. El catálogo también está en `notebooks/gbif_especies_por_clase_es_pt.ipynb`. El cuaderno de mortalidad está en `notebooks/exploracion_biodiversidad_gbif_v7_mortalidad.ipynb`. El JSON bruto está en `datos/registros_gbif_brutos.json`.
 
 ---
 

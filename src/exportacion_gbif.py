@@ -1,5 +1,6 @@
 """Exporta el resultado visible de la interfaz a CSV, JSON o un mapa HTML."""
 
+import json
 import math
 from html import escape
 from pathlib import Path
@@ -11,21 +12,38 @@ CARPETA_SALIDAS = RAIZ / "salidas_gbif_multiespecie"
 MAX_PUNTOS_MAPA = 2500
 
 
-def exportar_csv(df: pd.DataFrame, ruta: Path) -> Path:
+def con_especie(df: pd.DataFrame, especie: str) -> pd.DataFrame:
+    """Deja la especie en la primera columna para que se vea al abrir el fichero."""
+    nombre = especie.strip()
+    salida = df.copy()
+    if "especie" in salida.columns:
+        salida = salida.drop(columns=["especie"])
+    salida.insert(0, "especie", nombre)
+    return salida
+
+
+def exportar_csv(df: pd.DataFrame, ruta: Path, especie: str | None = None) -> Path:
     destino = Path(ruta)
     destino.parent.mkdir(parents=True, exist_ok=True)
-    df.to_csv(destino, index=False, encoding="utf-8-sig")
+    tabla = con_especie(df, especie) if especie else df
+    tabla.to_csv(destino, index=False, encoding="utf-8-sig")
     return destino
 
 
-def exportar_json(df: pd.DataFrame, ruta: Path) -> Path:
+def exportar_json(df: pd.DataFrame, ruta: Path, especie: str | None = None) -> Path:
     destino = Path(ruta)
     destino.parent.mkdir(parents=True, exist_ok=True)
-    df.to_json(destino, orient="records", force_ascii=False, indent=2)
+    tabla = con_especie(df, especie) if especie else df
+    registros = json.loads(tabla.to_json(orient="records", force_ascii=False))
+    if especie:
+        payload = {"especie": especie.strip(), "registros": registros}
+    else:
+        payload = registros
+    destino.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
     return destino
 
 
-def exportar_mapa_html(df: pd.DataFrame, ruta: Path) -> tuple[Path, int, bool]:
+def exportar_mapa_html(df: pd.DataFrame, ruta: Path, especie: str | None = None) -> tuple[Path, int, bool]:
     """Guarda un mapa Folium. Devuelve la ruta y cuántos puntos ha pintado."""
     if "decimalLatitude" not in df.columns or "decimalLongitude" not in df.columns:
         raise ValueError("Esta tabla no tiene coordenadas. Consulta ocurrencias antes de generar el mapa.")
@@ -63,7 +81,22 @@ def exportar_mapa_html(df: pd.DataFrame, ruta: Path) -> tuple[Path, int, bool]:
         control=True,
     ).add_to(mapa)
 
-    cluster = MarkerCluster(name="Ocurrencias").add_to(mapa)
+    nombre_especie = (especie or "").strip()
+    cluster = MarkerCluster(name=nombre_especie or "Ocurrencias").add_to(mapa)
+    if nombre_especie:
+        from branca.element import Element
+
+        mapa.get_root().html.add_child(
+            Element(
+                "<div style='position:fixed;top:12px;left:54px;z-index:9999;"
+                "background:#ffffff;padding:8px 14px;border-radius:8px;"
+                "font-family:Segoe UI,Arial,sans-serif;"
+                "box-shadow:0 1px 4px rgba(0,0,0,.28);'>"
+                f"<div style='font-size:16px;font-weight:600'>{escape(nombre_especie)}</div>"
+                "<div style='font-size:12px;color:#333'>Ocurrencias GBIF con coordenadas</div>"
+                "</div>"
+            )
+        )
     for _, fila in trabajo.iterrows():
         url_img = _texto(fila, "url_imagen", "")
         tiene_imagen = isinstance(url_img, str) and url_img.startswith("http")

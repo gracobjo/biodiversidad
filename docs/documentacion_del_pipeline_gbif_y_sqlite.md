@@ -1,6 +1,8 @@
 # Documentación Técnica: Pipeline ETL y Análisis Offline de Biodiversidad (GBIF + SQLite)
 
-Documento paralelo a [`documentacion_del_pipeline_gbif_y_mysql_8.md`](./documentacion_del_pipeline_gbif_y_mysql_8.md). El diseño de tablas, el orden de carga y la capa de consulta son los mismos. Cambia el motor: un archivo SQLite en la raíz del proyecto, sin servidor ni credenciales.
+Documento paralelo a [`documentacion_del_pipeline_gbif_y_mysql_8.md`](./documentacion_del_pipeline_gbif_y_mysql_8.md). El diseño de tablas, el orden de carga y la capa de consulta son los mismos. Cambia el motor: el archivo `datos/gbif_biodiversidad.sqlite`, sin servidor ni credenciales.
+
+La base tiene que estar iniciada antes de poblarla o consultarla. Iniciarla es crear el archivo y aplicar el esquema (sección 3, o el botón Crear de la interfaz). El archivo de la raíz del proyecto, `gbif_biodiversidad.sqlite`, no es esa base: la interfaz y `src/` no lo leen ni lo escriben.
 
 ## 1. Visión General y Arquitectura
 
@@ -72,16 +74,18 @@ Las rutas no dependen del directorio de trabajo. `db_sqlite_config.py` las resue
 
 ## 3. Cómo crear la base de datos
 
-Desde `src/`:
+Este paso inicia la base. Hasta que no se ha hecho, las consultas de `consulta_gbif_sqlite.py` y la pestaña Consultas de la interfaz no tienen archivo que abrir.
+
+Desde la raíz del proyecto:
 
 ```powershell
-python .\gbif_biodiversidad_sqlite.py
+python .\src\gbif_biodiversidad_sqlite.py
 ```
 
 El script lee `docs/schema_gbif_sqlite.sql` y lo ejecuta con `executescript` sobre `datos/gbif_biodiversidad.sqlite`. Si el archivo no existe, SQLite lo crea. La salida esperada es:
 
 ```text
-[SQLite] Esquema aplicado correctamente en: E:\...\biodiversidad\gbif_biodiversidad.sqlite
+[SQLite] Esquema aplicado correctamente en: E:\...\biodiversidad\datos\gbif_biodiversidad.sqlite
 ```
 
 El DDL usa `CREATE TABLE IF NOT EXISTS` y `CREATE INDEX IF NOT EXISTS`, así que volver a lanzarlo no borra datos.
@@ -140,7 +144,7 @@ La carga es idempotente: `INSERT ... ON CONFLICT DO UPDATE`. Repetir la ingesta 
 Una ingesta correcta termina así:
 
 ```text
-[SQLite] Carga completada en 'gbif_biodiversidad.sqlite': 1 taxón, 12 organizaciones, 17 datasets y 2000 ocurrencias.
+[SQLite] Carga completada en 'E:\...\biodiversidad\datos\gbif_biodiversidad.sqlite': 1 taxón, 12 organizaciones, 17 datasets y 2000 ocurrencias.
 ```
 
 Esos 2000 registros son el tope configurado (1000 de España y 1000 de Portugal), no el total disponible en GBIF.

@@ -21,6 +21,7 @@ Actores: persona investigadora, persona analista, persona ingeniera de datos. La
 | CU-11 | Filtrar ocurrencias ya vistas | Analista | RF-20 | interfaz, barra sobre la tabla |
 | CU-12 | Exportar tabla y mapa | Investigadora | RF-09, RF-10, RF-19 | interfaz o celda de exportación del cuaderno |
 | CU-13 | Validar calidad de la muestra | Analista | RF-05, RF-07 | cuadernos de exploración y diccionario de datos |
+| CU-14 | Ver especies de varias clases | Investigadora | RF-21 | interfaz o `gbif_especies_por_clase_es_pt.ipynb` |
 
 ## CU-01 Explorar una especie en España
 
@@ -83,6 +84,8 @@ Actores: persona investigadora, persona analista, persona ingeniera de datos. La
 
 **Disparador.** Hace falta la base que usan las consultas de `src/` y la interfaz.
 
+**Precondición.** La base tiene que estar iniciada: existe `datos/gbif_biodiversidad.sqlite` con el esquema aplicado. El paso 1 de este caso la inicia. Las consultas del paso 3 no se lanzan sobre el `gbif_biodiversidad.sqlite` de la raíz.
+
 **Flujo.**
 
 1. Desde `src/`, `python gbif_biodiversidad_sqlite.py` crea `datos/gbif_biodiversidad.sqlite`.
@@ -95,7 +98,7 @@ Actores: persona investigadora, persona analista, persona ingeniera de datos. La
 
 ## CU-09 Crear y poblar MySQL del pipeline
 
-**Precondición.** MySQL 8 en marcha y credenciales en `src/db_config.py` o en el formulario.
+**Precondición.** La base tiene que estar iniciada: el servidor MySQL 8 está en marcha, la base `gbif_biodiversidad` existe y las credenciales están en `src/db_config.py` o en el formulario.
 
 **Flujo.**
 
@@ -134,10 +137,11 @@ Actores: persona investigadora, persona analista, persona ingeniera de datos. La
 
 **Flujo.**
 
-1. Pestaña Exportar.
-2. Elige CSV, JSON o Mapa HTML.
-3. Confirma la ruta. Por defecto se ofrece `salidas_gbif_multiespecie/`.
-4. El mapa se abre en el navegador.
+1. La especie del cuadro superior es la que se exporta. Si la tabla es de otra especie, la interfaz pide repetir la consulta.
+2. Pestaña Exportar.
+3. Elige CSV, JSON o Mapa HTML. El nombre propuesto incluye la especie, por ejemplo `turdus_merula.csv`.
+4. Confirma la ruta. Por defecto se ofrece `salidas_gbif_multiespecie/`.
+5. El CSV lleva la columna `especie`, el JSON el campo `especie` y el mapa un recuadro con el nombre. El mapa se abre en el navegador.
 
 **Excepción.** Si la tabla es un resumen territorial, el mapa avisa de que no hay coordenadas.
 
@@ -150,5 +154,20 @@ Actores: persona investigadora, persona analista, persona ingeniera de datos. La
 3. Cruza el epíteto con el nombre aceptado.
 4. Revisa `coordinateUncertaintyInMeters` antes de interpretar un punto como localidad fina.
 5. Consulta [diccionario_datos_gbif.md](./diccionario_datos_gbif.md) para el significado de cada campo.
+
+## CU-14 Ver especies de varias clases
+
+**Disparador.** El ranking global de GBIF solo muestra aves y hace falta ver también mamíferos, escamosos, anfibios, insectos y plantas.
+
+**Precondición.** Hay red. Si después se va a poblar o consultar la base, tiene que estar iniciada.
+
+**Flujo.**
+
+1. En la interfaz, pulsa Especies con coordenadas, o abre `notebooks/gbif_especies_por_clase_es_pt.ipynb`.
+2. La tabla muestra cinco especies por clase, con clase, familia y ocurrencias con coordenadas.
+3. Al pulsar una fila, el nombre pasa al cuadro superior. Limpiar devuelve *Canis lupus*.
+4. Ver taxón, Ver ocurrencias, Poblar, las consultas y la exportación usan esa especie.
+
+**Postcondición.** El cuaderno, si se ejecuta hasta el final, guarda `salidas_gbif_multiespecie/especies_por_clase_es_pt.csv`. No descarga ocurrencias.
 
 **Postcondición.** El informe describe la muestra, no el censo de la especie.

@@ -11,7 +11,7 @@ Ejecución habitual:
 3. Elegir ese intérprete como kernel.
 4. Ejecutar las celdas en orden.
 
-La interfaz de escritorio no es un cuaderno. El archivo está en la raíz: `python interfaz_gbif.py`.
+La interfaz de escritorio no es un cuaderno. El archivo está en la raíz: `python interfaz_gbif.py`. Antes de Poblar o de Consultas, la base tiene que estar iniciada: en SQLite, el archivo `datos/gbif_biodiversidad.sqlite` con el esquema creado; en MySQL, el servidor en marcha y la base `gbif_biodiversidad` creada.
 
 ## Cuál usar
 
@@ -20,6 +20,7 @@ La interfaz de escritorio no es un cuaderno. El archivo está en la raíz: `pyth
 | Estudiar *Canis lupus* en España, separar lobo y perro, y mirar mortalidad | `exploracion_biodiversidad_gbif_v7_mortalidad.ipynb` |
 | Listar especies de España y Portugal y luego bajar una especie | `exploracion_biodiversidad_gbif-v6-es-pt.ipynb` (revisión de v4) |
 | *Canis lupus* en ES y PT, solo entre 1.000 y 3.000 m, sin perro doméstico | `exploracion_biodiversidad_gbif-v5-es-pt.ipynb` |
+| Ver especies de varias clases (no solo las aves más registradas) | `gbif_especies_por_clase_es_pt.ipynb` |
 | Varias especies a CSV y mapas, sin base de datos | `gbif_multiespecie_es_pt.ipynb` |
 | Lo mismo y, además, guardarlo en SQLite o MySQL | `gbif_multiespecie_es_pt_sqlite_mysql.ipynb` |
 | Llenar MySQL 8 con el esquema de `src/` | `ingesta_gbif_mysql.ipynb` y después `analisis_offline_gbif.ipynb` |
@@ -62,6 +63,10 @@ Fase A del pipeline MySQL descrito en `documentacion_del_pipeline_gbif_y_mysql_8
 Fase B. Lee MySQL con `src/consulta_gbif.py`: resumen, ocurrencias, filtro de lobo silvestre, territorio, datasets, campos dentro de `raw_json` y mapa Folium. No llama a la API.
 
 La copia renderizada de estos dos cuadernos está en `docs/exportaciones/`.
+
+### `gbif_especies_por_clase_es_pt.ipynb`
+
+Catálogo para ver especies antes de lanzar el multi-especie. Usa la misma función que el botón **Especies con coordenadas** de la interfaz: cinco especies con coordenadas de Mammalia, Squamata, Amphibia, Insecta, Magnoliopsida, Liliopsida y Aves, en España y Portugal (2000–2026). Muestra clase, familia y el recuento, y guarda `salidas_gbif_multiespecie/especies_por_clase_es_pt.csv`. No descarga ocurrencias ni crea base de datos. Los nombres se pueden copiar a `ESPECIES_OBJETIVO` de `gbif_multiespecie_es_pt.ipynb`.
 
 ### `gbif_multiespecie_es_pt.ipynb`
 

@@ -226,7 +226,7 @@ def guardar_en_sqlite(
         )
         conn.commit()
         print(
-            f"[SQLite] Carga completada en '{ruta_db.name}': 1 taxón, "
+            f"[SQLite] Carga completada en '{ruta_db}': 1 taxón, "
             f"{len(org_keys)} organizaciones, {len(dataset_keys)} datasets y {len(filas_occ)} ocurrencias."
         )
     except Exception:

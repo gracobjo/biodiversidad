@@ -2,6 +2,8 @@
 
 La variante local sin servidor está en [`documentacion_del_pipeline_gbif_y_sqlite.md`](./documentacion_del_pipeline_gbif_y_sqlite.md): creación del archivo, el fallo de certificado en la ingesta, la prueba de lectura y las consultas.
 
+La base tiene que estar iniciada antes de poblarla o consultarla. En MySQL eso significa dos cosas: el servidor MySQL 8 está en marcha, y la base `gbif_biodiversidad` ya existe porque se ha aplicado `docs/schema_gbif.sql` o se ha pulsado Crear en la interfaz. Si el servidor está parado, Crear, Poblar y las consultas fallan y no se escribe nada.
+
 ## 1. Visión General y Arquitectura
 
 El proyecto implementa una arquitectura **ETL (Extract, Transform, Load) + caché relacional local** para trabajar con datos de biodiversidad procedentes de la API pública de GBIF (*Global Biodiversity Information Facility*).

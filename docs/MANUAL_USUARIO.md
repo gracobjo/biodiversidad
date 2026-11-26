@@ -494,6 +494,13 @@ python interfaz_gbif.py
 
 Ahí se consulta la API, se crea y se puebla SQLite o MySQL, se lanzan las consultas locales, se filtra el listado de ocurrencias y se exporta a CSV, JSON y HTML. El detalle está en [CUADERNOS.md](./CUADERNOS.md).
 
+**Especies con coordenadas** lista cinco especies de cada clase (mamíferos, escamosos, anfibios, insectos, plantas y aves), con su familia. Pulsar una fila la escribe arriba. **Limpiar** devuelve *Canis lupus*. Ver taxón, Ver ocurrencias, Poblar y la pestaña Consultas usan esa especie. La exportación propone un fichero con su nombre (`turdus_merula.csv`, `.json` o `.html`) y lo repite dentro del archivo: columna en el CSV, campo `especie` en el JSON y recuadro en el mapa. El mismo catálogo, sin descargar ocurrencias, está en [`gbif_especies_por_clase_es_pt.ipynb`](../notebooks/gbif_especies_por_clase_es_pt.ipynb).
+
+La base tiene que estar iniciada antes de usar Poblar o la pestaña Consultas.
+
+- SQLite no tiene servidor. Iniciarla es pulsar Crear (o `python src\gbif_biodiversidad_sqlite.py`). El archivo que usa el proyecto es `datos/gbif_biodiversidad.sqlite`. El `gbif_biodiversidad.sqlite` de la raíz es otra copia y no recibe la carga.
+- MySQL 8 tiene que estar en marcha, con la base `gbif_biodiversidad` creada, antes de Crear, Poblar o Consultas.
+
 ### Comparación de los cuadernos y mapas
 
 | Característica | v7: mortalidad en España | v4: exploración en ES y PT |
@@ -524,6 +531,7 @@ Para comparar resultados, usa los identificadores `key` y las coordenadas, mant�
 |---|---|
 | [`exploracion_biodiversidad_gbif-v6-es-pt.ipynb`](../notebooks/exploracion_biodiversidad_gbif-v6-es-pt.ipynb) | Revisión vigente del catálogo ES+PT y de la descarga de una especie. Preferible a v4 para trabajo nuevo. |
 | [`exploracion_biodiversidad_gbif-v5-es-pt.ipynb`](../notebooks/exploracion_biodiversidad_gbif-v5-es-pt.ipynb) | *Canis lupus* en ES y PT, 2020–2026, solo entre 1.000 y 3.000 m, sin perro doméstico. |
+| [`gbif_especies_por_clase_es_pt.ipynb`](../notebooks/gbif_especies_por_clase_es_pt.ipynb) | Ver cinco especies de cada clase (mamíferos, escamosos, anfibios, insectos, plantas y aves) antes de descargarlas. |
 | [`gbif_multiespecie_es_pt.ipynb`](../notebooks/gbif_multiespecie_es_pt.ipynb) | Lobo, lince, oso y quebrantahuesos: CSV por especie, CSV maestro y mapas, sin base de datos. |
 | [`gbif_multiespecie_es_pt_sqlite_mysql.ipynb`](../notebooks/gbif_multiespecie_es_pt_sqlite_mysql.ipynb) | El mismo lote multi-especie más SQLite (`biodiversidad_gbif.db`) y, en opción, MySQL. Antes se llamaba `gbif_multiespecie_es_pt (1).ipynb`. |
 | [`ingesta_gbif_mysql.ipynb`](../notebooks/ingesta_gbif_mysql.ipynb) y [`analisis_offline_gbif.ipynb`](../notebooks/analisis_offline_gbif.ipynb) | Pipeline MySQL del esquema de `src/` (ingesta y análisis sin red). |
@@ -570,11 +578,14 @@ with open("datos/registros_gbif_brutos.json", encoding="utf-8") as f:
 ### Problema: `CERTIFICATE_VERIFY_FAILED` / certificado autofirmado
 **Solución:** En esta red, Netskope intercepta HTTPS. `src/ingesta_gbif_sqlite.py` y `src/volcarEndpoints.py` cargan `truststore` para usar el almacén de Windows. Instala `truststore` en el mismo intérprete si el cuaderno no pasa por esos módulos.
 
+### Problema: Poblar o Consultas no ven la base
+**Solución:** La base tiene que estar iniciada. En SQLite, pulsa Crear y abre `datos/gbif_biodiversidad.sqlite`, no el archivo homónimo de la raíz. En MySQL, arranca el servidor y pulsa Crear antes de poblar.
+
 ### Problema: la base SQLite existe pero las tablas están a cero
 **Solución:** `guardar_en_sqlite.py` no descarga nada si se ejecuta solo. La ingesta es `python src\ingesta_gbif_sqlite.py` o el botón Poblar de la interfaz. El archivo vigente es `datos/gbif_biodiversidad.sqlite`.
 
 ---
 
-**Versión:** 1.1  
+**Versión:** 1.3  
 **Última actualización:** 2026-11-26  
 **Autor:** Copilot SDK + gracobjo

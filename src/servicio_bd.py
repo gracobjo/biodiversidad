@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pandas as pd
 
+from db_sqlite_config import RUTA_DB_SQLITE
 from gbif_biodiversidad_sqlite import inicializar_sqlite
 from ingesta_gbif_sqlite import GBIF_API, descargar_desde_gbif, obtener_taxon
 
@@ -59,7 +60,7 @@ def poblar_base(
             session=sesion,
             gbif_api=GBIF_API,
         )
-        return f"SQLite cargada con {len(registros)} ocurrencias de {especie}."
+        return f"SQLite cargada en {RUTA_DB_SQLITE} con {len(registros)} ocurrencias de {especie}."
     if motor == "mysql":
         if not config_mysql:
             raise ValueError("Faltan los datos de conexión a MySQL.")

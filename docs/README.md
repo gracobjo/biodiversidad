@@ -79,7 +79,7 @@ Bienvenido a la documentación completa del proyecto de exploración de biodiver
 Qué hace cada `.ipynb` de `notebooks/`, cuándo usarlo y dónde deja CSV, JSON, HTML y bases de datos. Distingue `gbif_multiespecie_es_pt.ipynb` de `gbif_multiespecie_es_pt_sqlite_mysql.ipynb`.
 
 ### 5. **[ESPECIFICACION_REQUISITOS.md](./ESPECIFICACION_REQUISITOS.md)**
-Requisitos funcionales RF-01 a RF-20 y no funcionales, incluidos persistencia, interfaz y filtro de ocurrencias.
+Requisitos funcionales RF-01 a RF-21 y no funcionales, incluidos persistencia, interfaz, filtro de ocurrencias y catálogo por clase.
 
 ### 6. **[CASOS_DE_USO.md](./CASOS_DE_USO.md)**
 Trece casos, del cuaderno de mortalidad a la carga SQLite/MySQL y al filtro de la tabla ya visible.

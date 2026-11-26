@@ -34,27 +34,64 @@ def obtener_engine_sqlite(ruta_db: Path = RUTA_DB_SQLITE):
         engine.dispose()
 
 
-def obtener_resumen_general() -> pd.DataFrame:
-    sql = """
-        SELECT 'taxones' AS tabla, COUNT(*) AS total FROM taxones
-        UNION ALL
-        SELECT 'organizaciones', COUNT(*) FROM organizaciones
-        UNION ALL
-        SELECT 'datasets', COUNT(*) FROM datasets
-        UNION ALL
-        SELECT 'ocurrencias', COUNT(*) FROM ocurrencias;
-    """
+def _clausula_especie(especie: str | None, alias: str = "") -> tuple[str, dict]:
+    nombre = (especie or "").strip()
+    if not nombre:
+        return "1 = 1", {}
+    prefijo = f"{alias}." if alias else ""
+    sql = (
+        f"({prefijo}scientific_name = :especie OR {prefijo}scientific_name LIKE :especie_como "
+        f"OR {prefijo}accepted_scientific_name = :especie "
+        f"OR {prefijo}accepted_scientific_name LIKE :especie_como)"
+    )
+    return sql, {"especie": nombre, "especie_como": f"{nombre}%"}
+
+
+def obtener_resumen_general(especie: str | None = None) -> pd.DataFrame:
+    clausula, params = _clausula_especie(especie)
+    if not params:
+        sql = """
+            SELECT 'taxones' AS tabla, COUNT(*) AS total FROM taxones
+            UNION ALL
+            SELECT 'organizaciones', COUNT(*) FROM organizaciones
+            UNION ALL
+            SELECT 'datasets', COUNT(*) FROM datasets
+            UNION ALL
+            SELECT 'ocurrencias', COUNT(*) FROM ocurrencias
+        """
+        consulta = text(sql)
+    else:
+        sql = f"""
+            SELECT 'taxones' AS tabla, COUNT(*) AS total FROM taxones
+            WHERE scientific_name = :especie OR scientific_name LIKE :especie_como
+               OR canonical_name = :especie OR canonical_name LIKE :especie_como
+            UNION ALL
+            SELECT 'organizaciones', COUNT(DISTINCT organization_key) FROM ocurrencias
+            WHERE {clausula}
+            UNION ALL
+            SELECT 'datasets', COUNT(DISTINCT dataset_key) FROM ocurrencias
+            WHERE {clausula}
+            UNION ALL
+            SELECT 'ocurrencias', COUNT(*) FROM ocurrencias
+            WHERE {clausula}
+        """
+        consulta = text(sql)
     with obtener_engine_sqlite() as engine:
-        return pd.read_sql(text(sql), engine)
+        return _marcar_especie(pd.read_sql(consulta, engine, params=params), especie)
 
 
 def cargar_ocurrencias(
     paises: tuple[str, ...] | list[str] = ("ES", "PT"),
     solo_lobo_silvestre: bool = False,
     anio_min: int | None = None,
+    especie: str | None = None,
 ) -> pd.DataFrame:
     filtros = ["o.country_code IN :paises"]
     params: dict = {"paises": list(paises)}
+    clausula, extra = _clausula_especie(especie, "o")
+    if extra:
+        filtros.append(clausula)
+        params.update(extra)
 
     if solo_lobo_silvestre:
         filtros.append("o.specific_epithet = 'lupus'")
@@ -115,11 +152,12 @@ def cargar_ocurrencias(
     stmt = text(sql).bindparams(bindparam("paises", expanding=True))
 
     with obtener_engine_sqlite() as engine:
-        return pd.read_sql(stmt, engine, params=params)
+        return _marcar_especie(pd.read_sql(stmt, engine, params=params), especie)
 
 
-def resumen_territorial_por_comunidad(pais: str = "ES") -> pd.DataFrame:
-    sql = """
+def resumen_territorial_por_comunidad(pais: str = "ES", especie: str | None = None) -> pd.DataFrame:
+    clausula, extra = _clausula_especie(especie)
+    sql = f"""
         SELECT
             COALESCE(comunidad_gadm, state_province, 'Sin asignar') AS region,
             basis_of_record AS tipo_evidencia,
@@ -127,16 +165,18 @@ def resumen_territorial_por_comunidad(pais: str = "ES") -> pd.DataFrame:
             MIN(year) AS desde_anio,
             MAX(year) AS hasta_anio
         FROM ocurrencias
-        WHERE country_code = :pais
+        WHERE country_code = :pais AND {clausula}
         GROUP BY region, basis_of_record
-        ORDER BY total_registros DESC;
+        ORDER BY total_registros DESC
     """
     with obtener_engine_sqlite() as engine:
-        return pd.read_sql(text(sql), engine, params={"pais": pais})
+        df = pd.read_sql(text(sql), engine, params={"pais": pais, **extra})
+    return _marcar_especie(df, especie)
 
 
-def top_datasets_publicadores(limite: int = 10) -> pd.DataFrame:
-    sql = """
+def top_datasets_publicadores(limite: int = 10, especie: str | None = None) -> pd.DataFrame:
+    clausula, extra = _clausula_especie(especie, "o")
+    sql = f"""
         SELECT
             d.title AS dataset,
             org.title AS organizacion,
@@ -146,16 +186,19 @@ def top_datasets_publicadores(limite: int = 10) -> pd.DataFrame:
         FROM ocurrencias o
         JOIN datasets d ON o.dataset_key = d.dataset_key
         LEFT JOIN organizaciones org ON d.organization_key = org.organization_key
+        WHERE {clausula}
         GROUP BY d.dataset_key, d.title, org.title, org.country, d.license
         ORDER BY registros_en_bd DESC
-        LIMIT :limite;
+        LIMIT :limite
     """
     with obtener_engine_sqlite() as engine:
-        return pd.read_sql(text(sql), engine, params={"limite": limite})
+        df = pd.read_sql(text(sql), engine, params={"limite": limite, **extra})
+    return _marcar_especie(df, especie)
 
 
-def consultar_campos_raw_json(limite: int = 15) -> pd.DataFrame:
-    sql = """
+def consultar_campos_raw_json(limite: int = 15, especie: str | None = None) -> pd.DataFrame:
+    clausula, extra = _clausula_especie(especie)
+    sql = f"""
         SELECT
             occurrence_key,
             country_code,
@@ -167,9 +210,24 @@ def consultar_campos_raw_json(limite: int = 15) -> pd.DataFrame:
             json_extract(raw_json, '$.media[0].identifier') AS url_primera_foto,
             gbif_url
         FROM ocurrencias
-        WHERE COALESCE(json_array_length(raw_json, '$.media'), 0) > 0
-           OR json_extract(raw_json, '$.habitat') IS NOT NULL
-        LIMIT :limite;
+        WHERE ({clausula})
+          AND (
+            COALESCE(json_array_length(raw_json, '$.media'), 0) > 0
+            OR json_extract(raw_json, '$.habitat') IS NOT NULL
+          )
+        LIMIT :limite
     """
     with obtener_engine_sqlite() as engine:
-        return pd.read_sql(text(sql), engine, params={"limite": limite})
+        df = pd.read_sql(text(sql), engine, params={"limite": limite, **extra})
+    return _marcar_especie(df, especie)
+
+
+def _marcar_especie(df: pd.DataFrame, especie: str | None) -> pd.DataFrame:
+    nombre = (especie or "").strip()
+    if not nombre:
+        return df
+    salida = df.copy()
+    if "especie" in salida.columns:
+        salida = salida.drop(columns=["especie"])
+    salida.insert(0, "especie", nombre)
+    return salida

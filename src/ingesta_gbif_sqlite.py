@@ -31,6 +31,123 @@ def crear_sesion_gbif() -> requests.Session:
     return session
 
 
+ESPECIES_POR_CLASE = 5
+# Las aves copan el ranking global. Estas clases se piden aparte.
+# En las ocurrencias de GBIF los lagartos y las serpientes van en Squamata,
+# no en una clase Reptilia con registros.
+CLASES_A_MOSTRAR = (
+    "Mammalia",
+    "Squamata",
+    "Amphibia",
+    "Insecta",
+    "Magnoliopsida",
+    "Liliopsida",
+    "Aves",
+)
+
+
+def listar_especies_con_coordenadas(
+    paises: list[str] | None = None,
+    year_range: str | None = None,
+    limite: int = ESPECIES_POR_CLASE,
+    on_progreso=None,
+) -> list[dict]:
+    """Especies con coordenadas: cinco de cada clase, no solo las más numerosas.
+
+    La clave de cada clase sale de GET /v1/species/match?rank=CLASS.
+    Las especies, de GET /v1/occurrence/search con classKey, facet=speciesKey
+    y hasCoordinate=true. El nombre y la familia salen de GET /v1/species/{speciesKey}.
+    """
+    paises_consulta = list(paises or PAISES)
+    sesion = crear_sesion_gbif()
+
+    def aviso(mensaje: str) -> None:
+        if on_progreso is not None:
+            on_progreso(mensaje)
+
+    def parametros_base() -> list[tuple[str, str]]:
+        base = [("limit", "0"), ("hasCoordinate", "true")]
+        base.extend(("country", pais) for pais in paises_consulta)
+        if year_range:
+            base.append(("year", year_range))
+        return base
+
+    pendientes: list[tuple[str, int]] = []
+    vistos: set[str] = set()
+    for nombre_clase in CLASES_A_MOSTRAR:
+        aviso(f"GET {GBIF_API}/species/match  name={nombre_clase}  rank=CLASS")
+        coincidencia = sesion.get(
+            f"{GBIF_API}/species/match",
+            params={"name": nombre_clase, "rank": "CLASS", "strict": "true"},
+            timeout=20,
+        )
+        coincidencia.raise_for_status()
+        taxon_clase = coincidencia.json()
+        clave_clase = taxon_clase.get("usageKey")
+        if not clave_clase or str(taxon_clase.get("rank", "")).upper() != "CLASS":
+            aviso(f"{nombre_clase}: GBIF no devolvió una clase. Se omite.")
+            continue
+        aviso(
+            f"GET {GBIF_API}/occurrence/search  facet=speciesKey  classKey={clave_clase}  "
+            f"{nombre_clase}  limite={limite}"
+        )
+        busqueda = sesion.get(
+            f"{GBIF_API}/occurrence/search",
+            params=[
+                *parametros_base(),
+                ("classKey", str(clave_clase)),
+                ("facet", "speciesKey"),
+                ("facetLimit", str(limite)),
+            ],
+            timeout=40,
+        )
+        busqueda.raise_for_status()
+        faceta_especies = busqueda.json().get("facets") or []
+        conteos = faceta_especies[0].get("counts", []) if faceta_especies else []
+        for item in conteos:
+            clave = str(item.get("name") or "")
+            if not clave or clave in vistos:
+                continue
+            vistos.add(clave)
+            pendientes.append((clave, int(item.get("count") or 0)))
+
+    especies: list[dict] = []
+    for indice, (clave, total) in enumerate(pendientes, start=1):
+        aviso(f"GET {GBIF_API}/species/{clave}  ({indice}/{len(pendientes)})")
+        ficha = sesion.get(f"{GBIF_API}/species/{clave}", timeout=20)
+        ficha.raise_for_status()
+        taxon = ficha.json()
+        nombre = taxon.get("canonicalName") or taxon.get("scientificName") or clave
+        especies.append(
+            {
+                "nombre_cientifico": nombre,
+                "clase": taxon.get("class") or "",
+                "familia": taxon.get("family") or "",
+                "taxon_key": int(clave),
+                "ocurrencias_con_coordenadas": total,
+                "endpoint": f"{GBIF_API}/species/{clave}",
+            }
+        )
+    return _alternar_por_clase(especies, CLASES_A_MOSTRAR)
+
+
+def _alternar_por_clase(especies: list[dict], orden_clases: tuple[str, ...]) -> list[dict]:
+    """Una especie de cada clase en cada vuelta, para que las aves no ocupen toda la tabla."""
+    grupos: dict[str, list[dict]] = {}
+    for especie in especies:
+        grupos.setdefault(especie.get("clase") or "", []).append(especie)
+    for grupo in grupos.values():
+        grupo.sort(key=lambda fila: fila["ocurrencias_con_coordenadas"], reverse=True)
+    orden = [clase for clase in orden_clases if grupos.get(clase)]
+    orden.extend(clase for clase in grupos if clase not in orden)
+    mezcla: list[dict] = []
+    while any(grupos[clase] for clase in orden):
+        for clase in orden:
+            if grupos[clase]:
+                mezcla.append(grupos[clase].pop(0))
+    return mezcla
+
+
 def obtener_taxon(especie: str, sesion: requests.Session | None = None) -> dict:
     """Resuelve el nombre científico en /v1/species/match."""
     http = sesion or crear_sesion_gbif()
