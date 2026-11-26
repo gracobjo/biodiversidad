@@ -194,7 +194,7 @@ docs/
 - Darwin Core Standard: https://dwc.tdwg.org
 
 **Dentro del proyecto:**
-- Notebook principal: `notebooks/exploracion_biodiversidad_gbif_v7_mortalidad.ipynb`
+- Notebook principal: `notebooks/exploracion_01_canis_lupus_espana_mortalidad.ipynb`
 - Dataset JSON bruto: `datos/registros_gbif_brutos.json` (600 registros, 130 campos)
 - Dataset CSV normalizado: `salidas_gbif_multiespecie/registros_biodiversidad_gbif.csv` (600 × 60+ columnas), cuando se vuelve a ejecutar el cuaderno
 - Mapa interactivo: `salidas_gbif_multiespecie/mapa_avistamientos_gbif.html`

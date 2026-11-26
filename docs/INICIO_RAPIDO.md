@@ -36,7 +36,7 @@ Has recibido **3 documentos completos** sobre la exploración de biodiversidad c
     └─ Tiempo: ~15 minutos
 
 2️⃣  Después: Ejecuta el notebook
-    └─ Archivo: notebooks/exploracion_biodiversidad_gbif_v7_mortalidad.ipynb
+    └─ Archivo: notebooks/exploracion_01_canis_lupus_espana_mortalidad.ipynb
     └─ Tiempo: ~10 minutos (descarga) + análisis
 ```
 
@@ -271,7 +271,7 @@ El entorno virtual es la carpeta `.venv`. `uv sync` instala ahí exactamente lo 
 Elige tu ruta según tu rol (arriba).
 
 ### 3. Ejecutar el notebook (10-15 min)
-Abre `notebooks/exploracion_biodiversidad_gbif_v7_mortalidad.ipynb`. Qué hace cada cuaderno: [CUADERNOS.md](./CUADERNOS.md).
+Abre `notebooks/exploracion_01_canis_lupus_espana_mortalidad.ipynb`. Qué hace cada cuaderno: [CUADERNOS.md](./CUADERNOS.md).
 
 ### 4. Explorar resultados (5 min)
 - Abre `registros_biodiversidad_gbif.csv` en Excel

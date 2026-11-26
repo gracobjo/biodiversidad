@@ -40,9 +40,10 @@ flowchart LR
 ```mermaid
 flowchart TB
   subgraph cuadernos [notebooks]
-    v7[v7 mortalidad España]
-    v6[v4 y v6 catálogo ES+PT]
-    v5[v5 altitud]
+    n01[01 Canis lupus España, mortalidad]
+    n02[02 catálogo especies ES+PT]
+    n03[03 Canis lupus altitud]
+    n04[04 archivo catálogo ES+PT]
     multi[multi-especie CSV y mapas]
     clases[especies por clase]
     multibd[multi-especie SQLite y MySQL]
@@ -78,7 +79,10 @@ flowchart TB
   cmysql --> mysql[(MySQL gbif_biodiversidad)]
   mysqlpy --> mysql
   descarga --> gbif[API GBIF]
-  v7 --> gbif
+  n01 --> gbif
+  n02 --> gbif
+  n03 --> gbif
+  n04 --> gbif
   multi --> gbif
   clases --> gbif
   clases --> html

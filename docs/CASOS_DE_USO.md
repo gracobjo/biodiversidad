@@ -8,11 +8,11 @@ Actores: persona investigadora, persona analista, persona ingeniera de datos. La
 
 | ID | Nombre | Actor | Requisito | Dónde |
 |---|---|---|---|---|
-| CU-01 | Explorar una especie en España | Investigadora | RF-01, RF-02, RF-06, RF-08 | cuaderno v7 |
-| CU-02 | Revisar mortalidad y evidencia | Analista | RF-08 | cuaderno v7, secciones de vitalidad y `dynamicProperties` |
-| CU-03 | Separar lobo y perro | Investigadora | RF-06 | cuaderno v7, consultas de `src/`, filtro de la interfaz |
-| CU-04 | Explorar el catálogo ibérico | Investigadora | RF-01, RF-04 | cuadernos v4 y v6 |
-| CU-05 | Acotar por altitud | Investigadora | RF-04 | cuaderno v5 |
+| CU-01 | Explorar una especie en España | Investigadora | RF-01, RF-02, RF-06, RF-08 | cuaderno 01, mortalidad |
+| CU-02 | Revisar mortalidad y evidencia | Analista | RF-08 | cuaderno 01, secciones de vitalidad y `dynamicProperties` |
+| CU-03 | Separar lobo y perro | Investigadora | RF-06 | cuaderno 01, consultas de `src/`, filtro de la interfaz |
+| CU-04 | Explorar el catálogo ibérico | Investigadora | RF-01, RF-04 | cuaderno 02; el 04 es el archivo |
+| CU-05 | Acotar por altitud | Investigadora | RF-04 | cuaderno 03 |
 | CU-06 | Comparar varias especies | Investigadora | RF-11 | `gbif_multiespecie_es_pt.ipynb` |
 | CU-07 | Guardar el lote multi-especie | Ingeniera | RF-16 | `gbif_multiespecie_es_pt_sqlite_mysql.ipynb` |
 | CU-08 | Crear y poblar SQLite del pipeline | Ingeniera | RF-12, RF-14 | `src/` o interfaz |
@@ -31,7 +31,7 @@ Actores: persona investigadora, persona analista, persona ingeniera de datos. La
 
 **Flujo.**
 
-1. Abre `notebooks/exploracion_biodiversidad_gbif_v7_mortalidad.ipynb`.
+1. Abre `notebooks/exploracion_01_canis_lupus_espana_mortalidad.ipynb`.
 2. Revisa `ESPECIE_OBJETIVO`, el país y el rango de años.
 3. Ejecuta las celdas. El cuaderno llama a `/v1/species/match` y pagina `/v1/occurrence/search`.
 4. Lee el diagnóstico de filtros, la tabla normalizada y el mapa.

@@ -27,7 +27,10 @@ Trabajar con datos abiertos de biodiversidad requiere ir más allá de descargar
 ```text
 ├── interfaz_gbif.py                   # Interfaz Tkinter
 ├── notebooks/                         # Cuadernos. Guía: docs/CUADERNOS.md
-│   ├── exploracion_biodiversidad_gbif_v7_mortalidad.ipynb
+│   ├── exploracion_01_canis_lupus_espana_mortalidad.ipynb  # empieza aquí
+│   ├── exploracion_02_catalogo_especies_es_pt.ipynb
+│   ├── exploracion_03_canis_lupus_es_pt_altitud.ipynb
+│   ├── exploracion_04_archivo_catalogo_es_pt.ipynb        # archivo, no empezar aquí
 │   ├── gbif_especies_por_clase_es_pt.ipynb
 │   ├── gbif_multiespecie_es_pt.ipynb
 │   └── gbif_multiespecie_es_pt_sqlite_mysql.ipynb
@@ -38,7 +41,7 @@ Trabajar con datos abiertos de biodiversidad requiere ir más allá de descargar
 └── readme.md
 ```
 
-La interfaz se abre con `python interfaz_gbif.py`. Antes de poblar o consultar, la base tiene que estar iniciada: `datos/gbif_biodiversidad.sqlite` ya creado, o MySQL 8 en marcha con la base `gbif_biodiversidad`. **Especies con coordenadas** muestra cinco especies de cada clase, con familia; las consultas y la exportación siguen a la especie elegida. El catálogo también está en `notebooks/gbif_especies_por_clase_es_pt.ipynb`. El cuaderno de mortalidad está en `notebooks/exploracion_biodiversidad_gbif_v7_mortalidad.ipynb`. El JSON bruto está en `datos/registros_gbif_brutos.json`.
+La interfaz se abre con `python interfaz_gbif.py`. Antes de poblar o consultar, la base tiene que estar iniciada: `datos/gbif_biodiversidad.sqlite` ya creado, o MySQL 8 en marcha con la base `gbif_biodiversidad`. **Especies con coordenadas** muestra cinco especies de cada clase, con familia; las consultas y la exportación siguen a la especie elegida. El catálogo también está en `notebooks/gbif_especies_por_clase_es_pt.ipynb`. El cuaderno de mortalidad está en `notebooks/exploracion_01_canis_lupus_espana_mortalidad.ipynb`. El JSON bruto está en `datos/registros_gbif_brutos.json`.
 
 ---
 
@@ -82,7 +85,7 @@ python -m pip install requests pandas folium matplotlib seaborn ipykernel trusts
 python -m ipykernel install --user --name=biodiversidad --display-name="Python (biodiversidad)"
 ```
 
-> **Modo offline:** Si deseas explorar los datos sin realizar peticiones HTTP a la API de GBIF, carga directamente `datos/registros_gbif_brutos.json` desde la Sección 2b del cuaderno v7.
+> **Modo offline:** Si deseas explorar los datos sin realizar peticiones HTTP a la API de GBIF, carga directamente `datos/registros_gbif_brutos.json` desde la Sección 2b del cuaderno `exploracion_01_canis_lupus_espana_mortalidad.ipynb`.
 
 ---
 

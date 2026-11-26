@@ -7,7 +7,7 @@ Este manual es la guía de uso. La especificación vigente, los casos de uso y l
 - [CASOS_DE_USO.md](./CASOS_DE_USO.md): flujos CU-01 a CU-14.
 - [UML.md](./UML.md): casos de uso, componentes, secuencia, actividad y entidad-relación.
 
-Las secciones 1 a 4 de este manual describen el núcleo de la exploración (v7 y v4). Si discrepan de los tres documentos anteriores, manda el documento específico.
+Las secciones 1 a 4 de este manual describen el núcleo de la exploración (cuaderno 01, mortalidad en España, y cuaderno 04, archivo del catálogo ES+PT). Si discrepan de los tres documentos anteriores, manda el documento específico.
 
 ## 1. Requisitos Funcionales (RF)
 
@@ -484,7 +484,7 @@ uv sync --system-certs
 El entorno virtual es la carpeta `.venv`. El kernel **Python (biodiversidad)** es el nombre con el que Jupyter muestra el intérprete `.venv\Scripts\python.exe`. En la red de la Junta, `uv` necesita `--system-certs`. Si no, el certificado del proxy Netskope corta la descarga de paquetes.
 
 ### Ejecución:
-1. Abrir `notebooks/exploracion_biodiversidad_gbif_v7_mortalidad.ipynb`.
+1. Abrir `notebooks/exploracion_01_canis_lupus_espana_mortalidad.ipynb`.
 2. Seleccionar el kernel **Python (biodiversidad)**.
 3. Ejecutar todas las celdas en orden.
 4. Revisar salidas en `datos/` y `salidas_gbif_multiespecie/`.
@@ -506,9 +506,9 @@ La base tiene que estar iniciada antes de usar Poblar o la pestaña Consultas.
 
 ### Comparación de los cuadernos y mapas
 
-| Característica | v7: mortalidad en España | v4: exploración en ES y PT |
+| Característica | 01: mortalidad en España | 04: archivo del catálogo ES+PT |
 |---|---|---|
-| Cuaderno | [`exploracion_biodiversidad_gbif_v7_mortalidad.ipynb`](../notebooks/exploracion_biodiversidad_gbif_v7_mortalidad.ipynb) | [`exploracion_biodiversidad_gbif_v4_es_pt.ipynb`](../notebooks/exploracion_biodiversidad_gbif_v4_es_pt.ipynb) |
+| Cuaderno | [`exploracion_01_canis_lupus_espana_mortalidad.ipynb`](../notebooks/exploracion_01_canis_lupus_espana_mortalidad.ipynb) | [`exploracion_04_archivo_catalogo_es_pt.ipynb`](../notebooks/exploracion_04_archivo_catalogo_es_pt.ipynb) |
 | Ámbito por defecto | España (`country=ES`) | España y Portugal (`country=ES` y `country=PT`) |
 | Consulta principal | *Canis lupus*, 2020–2026, con coordenadas y sin incidencias geoespaciales señaladas por GBIF | Mismos filtros de especie, periodo y calidad espacial, pero para ambos países. La especie y el periodo se configuran en el cuaderno |
 | Límite | Hasta 600 registros para ES | Hasta 600 registros **en total** para ES+PT, no 600 por país |
@@ -520,9 +520,9 @@ La coincidencia de filtros para España no implica que ambas **muestras** españ
 **Ejemplo observado el 22–23 de noviembre de 2026**, con *Canis lupus* (`taxonKey=5219173`):
 
 - GBIF indicaba 2.390 registros para ES y 296 para PT con los filtros principales; 2.686 para ES+PT. Estos son totales disponibles, no tamaños de las descargas.
-- El mapa de v7 contenía 600 registros de ES. El de v4 contenía 534 de ES y 66 de PT. Compartían los 534 registros españoles, con las mismas coordenadas; los otros 66 registros españoles de v7 no aparecían en v4.
+- El mapa del cuaderno 01 contenía 600 registros de ES. El del cuaderno 04 contenía 534 de ES y 66 de PT. Compartían los 534 registros españoles, con las mismas coordenadas; los otros 66 registros españoles del 01 no aparecían en el 04.
 - Ambas muestras eran parciales. Los agrupamientos de marcadores y el encuadre también pueden cambiar la apariencia al variar el zoom o el ámbito.
-- Por ejemplo, la ficha GBIF `6131493059` aparecía en ambos mapas: v7 mostraba *Canis lupus familiaris* como nombre aceptado, mientras v4 mostraba *Canis lupus* por ser el nombre consultado. El nombre registrado en ambos CSV era *Canis familiaris*. No debe interpretarse la etiqueta de v4 como identificación individual del registro.
+- Por ejemplo, la ficha GBIF `6131493059` aparecía en ambos mapas: el cuaderno 01 mostraba *Canis lupus familiaris* como nombre aceptado, mientras el 04 mostraba *Canis lupus* por ser el nombre consultado. El nombre registrado en ambos CSV era *Canis familiaris*. No debe interpretarse la etiqueta del 04 como identificación individual del registro.
 
 Los nombres binomiales simples se normalizan antes de consultar GBIF y se comprueba la coincidencia del nombre canónico. Para otros formatos, como nombres con autor, revisa el taxón resuelto. El `taxonKey` puede incluir registros relacionados con perros; consulta los campos taxonómicos de cada registro antes de sacar conclusiones.
 
@@ -532,8 +532,8 @@ Para comparar resultados, usa los identificadores `key` y las coordenadas, mant�
 
 | Cuaderno | Para qué usarlo |
 |---|---|
-| [`exploracion_biodiversidad_gbif-v6-es-pt.ipynb`](../notebooks/exploracion_biodiversidad_gbif-v6-es-pt.ipynb) | Revisión vigente del catálogo ES+PT y de la descarga de una especie. Preferible a v4 para trabajo nuevo. |
-| [`exploracion_biodiversidad_gbif-v5-es-pt.ipynb`](../notebooks/exploracion_biodiversidad_gbif-v5-es-pt.ipynb) | *Canis lupus* en ES y PT, 2020–2026, solo entre 1.000 y 3.000 m, sin perro doméstico. |
+| [`exploracion_02_catalogo_especies_es_pt.ipynb`](../notebooks/exploracion_02_catalogo_especies_es_pt.ipynb) | Catálogo vigente de ES+PT y descarga de una especie. Para trabajo nuevo, usa este y no el 04. |
+| [`exploracion_03_canis_lupus_es_pt_altitud.ipynb`](../notebooks/exploracion_03_canis_lupus_es_pt_altitud.ipynb) | *Canis lupus* en ES y PT, 2020–2026, solo entre 1.000 y 3.000 m, sin perro doméstico. |
 | [`gbif_especies_por_clase_es_pt.ipynb`](../notebooks/gbif_especies_por_clase_es_pt.ipynb) | Ver cinco especies de cada clase (mamíferos, escamosos, anfibios, insectos, plantas y aves) antes de descargarlas. |
 | [`gbif_multiespecie_es_pt.ipynb`](../notebooks/gbif_multiespecie_es_pt.ipynb) | Lobo, lince, oso y quebrantahuesos: CSV por especie, CSV maestro y mapas, sin base de datos. |
 | [`gbif_multiespecie_es_pt_sqlite_mysql.ipynb`](../notebooks/gbif_multiespecie_es_pt_sqlite_mysql.ipynb) | El mismo lote multi-especie más SQLite (`biodiversidad_gbif.db`) y, en opción, MySQL. Antes se llamaba `gbif_multiespecie_es_pt (1).ipynb`. |

@@ -17,42 +17,45 @@ La interfaz de escritorio no es un cuaderno. El archivo está en la raíz: `pyth
 
 ## Cuál usar
 
-| Si quieres… | Cuaderno |
-|---|---|
-| Estudiar *Canis lupus* en España, separar lobo y perro, y mirar mortalidad | `exploracion_biodiversidad_gbif_v7_mortalidad.ipynb` |
-| Listar especies de España y Portugal y luego bajar una especie | `exploracion_biodiversidad_gbif-v6-es-pt.ipynb` (revisión de v4) |
-| *Canis lupus* en ES y PT, solo entre 1.000 y 3.000 m, sin perro doméstico | `exploracion_biodiversidad_gbif-v5-es-pt.ipynb` |
-| Ver especies de varias clases (no solo las aves más registradas) | `gbif_especies_por_clase_es_pt.ipynb` |
-| Varias especies a CSV y mapas, sin base de datos | `gbif_multiespecie_es_pt.ipynb` |
-| Lo mismo y, además, guardarlo en SQLite o MySQL | `gbif_multiespecie_es_pt_sqlite_mysql.ipynb` |
-| Llenar MySQL 8 con el esquema de `src/` | `ingesta_gbif_mysql.ipynb` y después `analisis_offline_gbif.ipynb` |
-| Llenar y consultar `datos/gbif_biodiversidad.sqlite` | no hace falta cuaderno: `src/ingesta_gbif_sqlite.py` o la interfaz |
+Los cuatro cuadernos de exploración llevan un número. Abre el **01** primero. El **04** es el archivo de la primera versión: no empieces por ahí.
+
+| Orden | Si quieres… | Cuaderno |
+|---|---|---|
+| 01 | Estudiar *Canis lupus* en España, separar lobo y perro, y mirar mortalidad | `exploracion_01_canis_lupus_espana_mortalidad.ipynb` |
+| 02 | Listar especies de España y Portugal y luego bajar una especie | `exploracion_02_catalogo_especies_es_pt.ipynb` |
+| 03 | *Canis lupus* en ES y PT, solo entre 1.000 y 3.000 m, sin perro doméstico | `exploracion_03_canis_lupus_es_pt_altitud.ipynb` |
+| 04 | Consultar la primera exploración ibérica (muestra histórica) | `exploracion_04_archivo_catalogo_es_pt.ipynb` |
+| | Ver especies de varias clases (no solo las aves más registradas) | `gbif_especies_por_clase_es_pt.ipynb` |
+| | Varias especies a CSV y mapas, sin base de datos | `gbif_multiespecie_es_pt.ipynb` |
+| | Lo mismo y, además, guardarlo en SQLite o MySQL | `gbif_multiespecie_es_pt_sqlite_mysql.ipynb` |
+| | Llenar MySQL 8 con el esquema de `src/` | `ingesta_gbif_mysql.ipynb` y después `analisis_offline_gbif.ipynb` |
+| | Llenar y consultar `datos/gbif_biodiversidad.sqlite` | no hace falta cuaderno: `src/ingesta_gbif_sqlite.py` o la interfaz |
 
 ## Exploración de una especie
 
-### `exploracion_biodiversidad_gbif_v4_es_pt.ipynb`
+### `exploracion_01_canis_lupus_espana_mortalidad.ipynb`
 
-Primera exploración ibérica. Descubre especies en España y Portugal con facetas de `/v1/occurrence/search`, resuelve nombres comunes y descarga la especie elegida (por defecto *Canis lupus*). El tope es de unos 600 registros **en total** para los dos países, no 600 por país. El mapa pinta España y Portugal con colores distintos. El CSV y el HTML quedan en `salidas_gbif_multiespecie/`.
-
-Úsalo como referencia histórica de aquella muestra. Para repetir el catálogo, el cuaderno vigente es v6.
-
-### `exploracion_biodiversidad_gbif-v5-es-pt.ipynb`
-
-Consulta solo *Canis lupus* en España y Portugal, años 2020–2026, en la franja de 1.000 a 3.000 m, y aparta *Canis lupus familiaris*. Exporta un CSV Darwin Core y `mapa_canis_lupus_es_pt.html`. No recorre un catálogo de especies.
-
-La copia ya generada de ese CSV está archivada en `datos/canis_lupus_es_pt_2020_2026_darwin_core.csv`. Una ejecución nueva escribe otra copia en `salidas_gbif_multiespecie/` y no pisa el archivo de `datos/`.
-
-### `exploracion_biodiversidad_gbif-v6-es-pt.ipynb`
-
-Revisión de la exploración ibérica de v4, con el mismo título. Tiene dos fases: catálogo alfabético de especies en ES y PT (faceta `speciesKey`, nombre científico y nombre común) y, después, descarga paginada de `ESPECIE_OBJETIVO`. Incluye diagnóstico de filtros, normalización, CSV y mapa por país.
-
-### `exploracion_biodiversidad_gbif_v7_mortalidad.ipynb`
-
-Cuaderno principal de una sola especie en **España**. Resuelve *Canis lupus* con `/v1/species/match`, descarga 2020–2026 con coordenadas, guarda el JSON bruto en `datos/registros_gbif_brutos.json` y separa lobo (`specificEpithet == lupus`) de perro (`familiaris`) antes de interpretar nada. Revisa vitalidad, protocolo de muestreo, evidencia de presencia y territorio GADM. El mapa distingue el epíteto, no el país.
+Empieza por este. Cuaderno principal de una sola especie en **España**. Antes se llamaba `exploracion_biodiversidad_gbif_v7_mortalidad.ipynb`. Resuelve *Canis lupus* con `/v1/species/match`, descarga 2020–2026 con coordenadas, guarda el JSON bruto en `datos/registros_gbif_brutos.json` y separa lobo (`specificEpithet == lupus`) de perro (`familiaris`) antes de interpretar nada. Revisa vitalidad, protocolo de muestreo, evidencia de presencia y territorio GADM. El mapa distingue el epíteto, no el país.
 
 Para repetir el análisis sin red, carga `datos/registros_gbif_brutos.json` y sigue desde la normalización.
 
-La muestra de referencia del manual (600 registros, 315 lobos y 285 perros) sale de este cuaderno, no de v4. v4 reparte el mismo tope entre España y Portugal, así que la muestra española no coincide.
+La muestra de referencia del manual (600 registros, 315 lobos y 285 perros) sale de este cuaderno, no del 04. El 04 reparte el mismo tope entre España y Portugal, así que la muestra española no coincide.
+
+### `exploracion_02_catalogo_especies_es_pt.ipynb`
+
+Catálogo vigente de España y Portugal. Antes se llamaba `exploracion_biodiversidad_gbif-v6-es-pt.ipynb`. Tiene dos fases: catálogo alfabético de especies en ES y PT (faceta `speciesKey`, nombre científico y nombre común) y, después, descarga paginada de `ESPECIE_OBJETIVO`. Incluye diagnóstico de filtros, normalización, CSV y mapa por país. Para trabajo nuevo de catálogo, usa este y no el 04.
+
+### `exploracion_03_canis_lupus_es_pt_altitud.ipynb`
+
+Consulta solo *Canis lupus* en España y Portugal, años 2020–2026, en la franja de 1.000 a 3.000 m, y aparta *Canis lupus familiaris*. Antes se llamaba `exploracion_biodiversidad_gbif-v5-es-pt.ipynb`. Exporta un CSV Darwin Core y `mapa_canis_lupus_es_pt.html`. No recorre un catálogo de especies.
+
+La copia ya generada de ese CSV está archivada en `datos/canis_lupus_es_pt_2020_2026_darwin_core.csv`. Una ejecución nueva escribe otra copia en `salidas_gbif_multiespecie/` y no pisa el archivo de `datos/`.
+
+### `exploracion_04_archivo_catalogo_es_pt.ipynb`
+
+Archivo de la primera exploración ibérica. Antes se llamaba `exploracion_biodiversidad_gbif_v4_es_pt.ipynb`. Descubre especies en España y Portugal con facetas de `/v1/occurrence/search`, resuelve nombres comunes y descarga la especie elegida (por defecto *Canis lupus*). El tope es de unos 600 registros **en total** para los dos países, no 600 por país. El mapa pinta España y Portugal con colores distintos. El CSV y el HTML quedan en `salidas_gbif_multiespecie/`.
+
+Úsalo como referencia histórica de aquella muestra. Para repetir el catálogo, el cuaderno vigente es el 02.
 
 ## Ingesta y análisis con base de datos
 
