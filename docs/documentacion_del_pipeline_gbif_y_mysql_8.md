@@ -1,5 +1,7 @@
 # Documentación Técnica: Pipeline ETL y Análisis Offline de Biodiversidad (GBIF + MySQL 8)
 
+La variante local sin servidor está en [`documentacion_del_pipeline_gbif_y_sqlite.md`](./documentacion_del_pipeline_gbif_y_sqlite.md): creación del archivo, el fallo de certificado en la ingesta, la prueba de lectura y las consultas.
+
 ## 1. Visión General y Arquitectura
 
 El proyecto implementa una arquitectura **ETL (Extract, Transform, Load) + caché relacional local** para trabajar con datos de biodiversidad procedentes de la API pública de GBIF (*Global Biodiversity Information Facility*).
@@ -21,8 +23,8 @@ biodiversidad/
 ├── salidas_gbif_multiespecie/             # Carpeta generada automáticamente para exportaciones HTML
 │   └── mapa_ocurrencias_gbif.html         # Mapa interactivo generado con Folium
 ├── schema_gbif.sql                        # Script DDL de creación de la base de datos y tablas en MySQL 8
-├── ingesta_gbif_mysql.ipynb               # Cuaderno Fase A: Descarga desde API GBIF y volcado a MySQL
-├── analisis_offline_gbif.ipynb            # Cuaderno Fase B: Exploración offline, SQL/JSON y mapas Folium
+├── notebooks/ingesta_gbif_mysql.ipynb     # Cuaderno Fase A: Descarga desde API GBIF y volcado a MySQL
+├── notebooks/analisis_offline_gbif.ipynb  # Cuaderno Fase B: Exploración offline, SQL/JSON y mapas Folium
 ├── prueba_lectura_mysql.py                # Script CLI de validación de consultas contra MySQL
 ├── pyproject.toml                         # Dependencias gestionadas con uv
 └── DOCUMENTACION_PIPELINE_GBIF.md         # Este documento

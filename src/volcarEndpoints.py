@@ -2,6 +2,11 @@ import json
 import math
 import mysql.connector
 import requests
+import truststore
+
+# El proxy de inspección (Netskope) firma el tráfico con una CA que está en
+# el almacén de Windows, no en el paquete certifi que usa requests.
+truststore.inject_into_ssl()
 
 
 def _limpiar_val(val):

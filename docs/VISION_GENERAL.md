@@ -1,5 +1,7 @@
 # 🎯 Visión General - Documentación de Biodiversidad GBIF
 
+Además del paquete inicial, el índice vivo es [README.md](./README.md): cuadernos, requisitos, casos de uso, UML y los dos pipelines (SQLite y MySQL).
+
 ## ¿Qué tiene en sus manos?
 
 Ha recibido una **documentación profesional completa** sobre una **aplicación Python que explora biodiversidad mediante la API pública de GBIF**. 

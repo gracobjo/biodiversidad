@@ -36,7 +36,7 @@ Has recibido **3 documentos completos** sobre la exploración de biodiversidad c
     └─ Tiempo: ~15 minutos
 
 2️⃣  Después: Ejecuta el notebook
-    └─ Archivo: exploracion_biodiversidad_gbif_v7_mortalidad.ipynb
+    └─ Archivo: notebooks/exploracion_biodiversidad_gbif_v7_mortalidad.ipynb
     └─ Tiempo: ~10 minutos (descarga) + análisis
 ```
 
@@ -214,7 +214,7 @@ Has recibido **3 documentos completos** sobre la exploración de biodiversidad c
 ### Archivos Generados Automáticamente
 
 ```
-registros_gbif_brutos.json
+datos/registros_gbif_brutos.json
 ├─ 600 registros
 ├─ 130 campos (Darwin Core)
 ├─ Formato: JSON con indentación
@@ -268,7 +268,7 @@ uv pip install requests pandas folium matplotlib ipykernel
 Elige tu ruta según tu rol (arriba).
 
 ### 3. Ejecutar el notebook (10-15 min)
-Abre `exploracion_biodiversidad_gbif_v7_mortalidad.ipynb` en VS Code.
+Abre `notebooks/exploracion_biodiversidad_gbif_v7_mortalidad.ipynb`. Qué hace cada cuaderno: [CUADERNOS.md](./CUADERNOS.md).
 
 ### 4. Explorar resultados (5 min)
 - Abre `registros_biodiversidad_gbif.csv` en Excel

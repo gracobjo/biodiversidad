@@ -32,6 +32,7 @@ def inicializar_bd_sqlite(
     if not ruta_sql.exists():
         raise FileNotFoundError(f"No se encuentra el esquema DDL en: {ruta_sql}")
 
+    ruta_db.parent.mkdir(parents=True, exist_ok=True)
     with sqlite3.connect(str(ruta_db)) as conn:
         conn.execute("PRAGMA foreign_keys = ON;")
         conn.executescript(ruta_sql.read_text(encoding="utf-8"))

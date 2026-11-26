@@ -25,13 +25,19 @@ Trabajar con datos abiertos de biodiversidad requiere ir más allá de descargar
 ## 🗂️ Estructura del repositorio
 
 ```text
-├── exploracion_biodiversidad_gbif_v7_mortalidad.ipynb  # Cuaderno principal con el flujo completo
-├── diccionario_datos_gbif.md                           # Documentación detallada de los 130 campos del JSON
-├── registros_gbif_brutos.json                          # Snapshot en bruto devuelto por la API (600 registros)
-├── registros_biodiversidad_gbif.csv                    # Dataset limpio, normalizado y listo para BI/SQL
-├── mapa_avistamientos_gbif.html                        # Mapa interactivo Folium (lobo vs. perro)
-└── README.md                                           # Documentación del proyecto
+├── interfaz_gbif.py                   # Interfaz Tkinter
+├── notebooks/                         # Cuadernos. Guía: docs/CUADERNOS.md
+│   ├── exploracion_biodiversidad_gbif_v7_mortalidad.ipynb
+│   ├── gbif_multiespecie_es_pt.ipynb
+│   └── gbif_multiespecie_es_pt_sqlite_mysql.ipynb
+├── src/                               # Ingesta y consultas
+├── datos/                             # SQLite del pipeline, JSON bruto y CSV archivado
+├── salidas_gbif_multiespecie/         # CSV, HTML y la SQLite del cuaderno multi-especie
+├── docs/                              # Manual, requisitos, casos de uso, UML y diccionario
+└── readme.md
 ```
+
+La interfaz se abre con `python interfaz_gbif.py`. El cuaderno de mortalidad está en `notebooks/exploracion_biodiversidad_gbif_v7_mortalidad.ipynb`. El JSON bruto está en `datos/registros_gbif_brutos.json`.
 
 ---
 
@@ -71,7 +77,7 @@ python -m pip install requests pandas folium matplotlib ipykernel
 python -m ipykernel install --user --name=gbif-py314 --display-name="Python 3.14 (GBIF)"
 ```
 
-> **Modo offline:** Si deseas explorar los datos sin realizar peticiones HTTP a la API de GBIF, carga directamente `registros_gbif_brutos.json` desde la Sección 2b del cuaderno.
+> **Modo offline:** Si deseas explorar los datos sin realizar peticiones HTTP a la API de GBIF, carga directamente `datos/registros_gbif_brutos.json` desde la Sección 2b del cuaderno v7.
 
 ---
 

@@ -1,5 +1,7 @@
 # 📦 Resumen Ejecutivo - Documentación Creada
 
+La documentación posterior a este resumen está en [CUADERNOS.md](./CUADERNOS.md), [ESPECIFICACION_REQUISITOS.md](./ESPECIFICACION_REQUISITOS.md), [CASOS_DE_USO.md](./CASOS_DE_USO.md) y [UML.md](./UML.md). Los cuadernos están en `notebooks/`. El JSON bruto está en `datos/registros_gbif_brutos.json`.
+
 ## ✅ Documentos Entregados
 
 Se han creado **5 documentos completos** en la carpeta `docs/` del proyecto, con un total de **~71 KB** de documentación técnica y conceptual.
@@ -192,10 +194,10 @@ docs/
 - Darwin Core Standard: https://dwc.tdwg.org
 
 **Dentro del proyecto:**
-- Notebook principal: `exploracion_biodiversidad_gbif_v7_mortalidad.ipynb`
-- Dataset JSON bruto: `registros_gbif_brutos.json` (600 registros, 130 campos)
-- Dataset CSV normalizado: `registros_biodiversidad_gbif.csv` (600 × 60+ columnas)
-- Mapa interactivo: `mapa_avistamientos_gbif.html` (Folium + Leaflet)
+- Notebook principal: `notebooks/exploracion_biodiversidad_gbif_v7_mortalidad.ipynb`
+- Dataset JSON bruto: `datos/registros_gbif_brutos.json` (600 registros, 130 campos)
+- Dataset CSV normalizado: `salidas_gbif_multiespecie/registros_biodiversidad_gbif.csv` (600 × 60+ columnas), cuando se vuelve a ejecutar el cuaderno
+- Mapa interactivo: `salidas_gbif_multiespecie/mapa_avistamientos_gbif.html`
 
 ---
 

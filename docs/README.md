@@ -75,6 +75,24 @@ Bienvenido a la documentación completa del proyecto de exploración de biodiver
 
 ---
 
+### 4. **[CUADERNOS.md](./CUADERNOS.md)**
+Qué hace cada `.ipynb` de `notebooks/`, cuándo usarlo y dónde deja CSV, JSON, HTML y bases de datos. Distingue `gbif_multiespecie_es_pt.ipynb` de `gbif_multiespecie_es_pt_sqlite_mysql.ipynb`.
+
+### 5. **[ESPECIFICACION_REQUISITOS.md](./ESPECIFICACION_REQUISITOS.md)**
+Requisitos funcionales RF-01 a RF-20 y no funcionales, incluidos persistencia, interfaz y filtro de ocurrencias.
+
+### 6. **[CASOS_DE_USO.md](./CASOS_DE_USO.md)**
+Trece casos, del cuaderno de mortalidad a la carga SQLite/MySQL y al filtro de la tabla ya visible.
+
+### 7. **[UML.md](./UML.md)**
+Casos de uso, componentes, módulos, secuencias de ingesta y de filtrado, actividad y los dos modelos entidad-relación.
+
+### 8. Pipelines
+- [documentacion_del_pipeline_gbif_y_sqlite.md](./documentacion_del_pipeline_gbif_y_sqlite.md)
+- [documentacion_del_pipeline_gbif_y_mysql_8.md](./documentacion_del_pipeline_gbif_y_mysql_8.md)
+
+---
+
 ## 🚀 Rutas de Lectura Recomendadas
 
 ### 🎯 Si eres **usuario final/investigador:**
@@ -88,7 +106,7 @@ Bienvenido a la documentación completa del proyecto de exploración de biodiver
 
 ### 👨‍💻 Si eres **desarrollador/ingeniero de datos:**
 1. Lee **GUIA_API_GBIF.md** completo (arquitectura, sub-APIs, limitaciones)
-2. Consulta **MANUAL_USUARIO.md** secciones 4 (Diagramas UML) y 5 (inicio rápido)
+2. Consulta **UML.md**, **ESPECIFICACION_REQUISITOS.md** y la sección 5 de **MANUAL_USUARIO.md**
 3. Usa **diccionario_datos_gbif.md** como referencia mientras codificas
 
 **Tiempo:** ~40 minutos + exploración práctica
@@ -117,7 +135,7 @@ Bienvenido a la documentación completa del proyecto de exploración de biodiver
 
 | Archivo | Tipo | Descripción | Uso |
 |---------|------|-------------|-----|
-| `registros_gbif_brutos.json` | JSON | Respuesta raw del API (600 registros, 130 campos) | Fuente única de verdad; reutilizable offline |
+| `datos/registros_gbif_brutos.json` | JSON | Respuesta raw del API (600 registros, 130 campos) | Fuente única de verdad; reutilizable offline |
 | `registros_biodiversidad_gbif.csv` | CSV | Dataset normalizado y transformado | Análisis BI, SQL, herramientas estadísticas |
 | `mapa_avistamientos_gbif.html` | HTML | Mapa interactivo Folium | Visualización web; compartir con stakeholders |
 | `registros_<especie>_es_pt.csv` | CSV | Registros seleccionados de ES+PT, exportados por v4 | Comparación territorial |
@@ -208,7 +226,7 @@ Si encuentras:
 
 1. **Comprende el problema:** Lee [MANUAL_USUARIO.md](./MANUAL_USUARIO.md) secciones 1-3
 2. **Entiende la API:** Lee [GUIA_API_GBIF.md](./GUIA_API_GBIF.md) secciones 1-3
-3. **Ejecuta el código:** Abre `exploracion_biodiversidad_gbif_v7_mortalidad.ipynb`
+3. **Ejecuta el código:** Abre `notebooks/exploracion_biodiversidad_gbif_v7_mortalidad.ipynb`. La guía de todos los cuadernos es [CUADERNOS.md](./CUADERNOS.md).
 4. **Explora los datos:** Abre `registros_biodiversidad_gbif.csv` en Excel/pandas
 5. **Visualiza:** Abre `mapa_avistamientos_gbif.html` en el navegador
 

@@ -1,20 +1,34 @@
 from contextlib import contextmanager
 import pandas as pd
-from sqlalchemy import create_engine, text
-from sqlalchemy.engine import Engine, URL
 from sqlalchemy import bindparam, create_engine, text
-from db_config import DB_CONFIG
+from sqlalchemy.engine import Engine, URL
+
+_CONFIG_ACTIVA: dict | None = None
+
+
+def usar_config(config: dict | None) -> None:
+    """Fija la conexión MySQL usada por las consultas. None vuelve a db_config.py."""
+    global _CONFIG_ACTIVA
+    _CONFIG_ACTIVA = dict(config) if config is not None else None
+
+
+def _config() -> dict:
+    if _CONFIG_ACTIVA is not None:
+        return _CONFIG_ACTIVA
+    from db_config import DB_CONFIG
+    return DB_CONFIG
 
 
 def crear_engine_gbif() -> Engine:
     """Crea un motor SQLAlchemy seguro para MySQL 8 usando mysql-connector-python."""
+    cfg = _config()
     url_conexion = URL.create(
         drivername="mysql+mysqlconnector",
-        username=DB_CONFIG["user"],
-        password=DB_CONFIG["password"],
-        host=DB_CONFIG["host"],
-        port=DB_CONFIG["port"],
-        database=DB_CONFIG["database"],
+        username=cfg["user"],
+        password=cfg["password"],
+        host=cfg["host"],
+        port=int(cfg["port"]),
+        database=cfg["database"],
     )
     return create_engine(url_conexion, pool_pre_ping=True)
 

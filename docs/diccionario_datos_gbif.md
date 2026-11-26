@@ -1,4 +1,4 @@
-# Diccionario de Datos del JSON de GBIF (`registros_gbif_brutos.json`)
+# Diccionario de Datos del JSON de GBIF (`datos/registros_gbif_brutos.json`)
 
 Este documento describe la estructura y cobertura de los **600 registros** descargados desde el endpoint `/v1/occurrence/search` de la API pública de GBIF para `taxonKey=5219173` (*Canis lupus* en España, 2020–2026).
 

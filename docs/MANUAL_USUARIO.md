@@ -1,5 +1,14 @@
 # 📋 Manual de Usuario: Exploración de Biodiversidad con API GBIF
 
+Este manual es la guía de uso. La especificación vigente, los casos de uso y los diagramas están en documentos propios:
+
+- [CUADERNOS.md](./CUADERNOS.md): qué hace cada cuaderno y cómo ejecutarlo.
+- [ESPECIFICACION_REQUISITOS.md](./ESPECIFICACION_REQUISITOS.md): requisitos funcionales y no funcionales, incluidos SQLite, MySQL, la interfaz y el filtro de ocurrencias.
+- [CASOS_DE_USO.md](./CASOS_DE_USO.md): flujos CU-01 a CU-13.
+- [UML.md](./UML.md): casos de uso, componentes, secuencia, actividad y entidad-relación.
+
+Las secciones 1 a 4 de este manual describen el núcleo de la exploración (v7 y v4). Si discrepan de los tres documentos anteriores, manda el documento específico.
+
 ## 1. Requisitos Funcionales (RF)
 
 ### RF1: Resolución Taxonómica Dinámica
@@ -472,16 +481,24 @@ python -m ipykernel install --user --name=gbif-py314 --display-name="Python 3.14
 ```
 
 ### Ejecución:
-1. Abrir `exploracion_biodiversidad_gbif_v7_mortalidad.ipynb` en VS Code (con Jupyter).
+1. Abrir `notebooks/exploracion_biodiversidad_gbif_v7_mortalidad.ipynb`.
 2. Seleccionar kernel **Python 3.14 (GBIF)**.
-3. Ejecutar todas las celdas en orden (`Ctrl+Shift+Enter`).
-4. Revisar outputs y archivos generados.
+3. Ejecutar todas las celdas en orden.
+4. Revisar salidas en `datos/` y `salidas_gbif_multiespecie/`.
+
+La interfaz de escritorio, desde la raíz del proyecto:
+
+```powershell
+python interfaz_gbif.py
+```
+
+Ahí se consulta la API, se crea y se puebla SQLite o MySQL, se lanzan las consultas locales, se filtra el listado de ocurrencias y se exporta a CSV, JSON y HTML. El detalle está en [CUADERNOS.md](./CUADERNOS.md).
 
 ### Comparación de los cuadernos y mapas
 
 | Característica | v7: mortalidad en España | v4: exploración en ES y PT |
 |---|---|---|
-| Cuaderno | [`exploracion_biodiversidad_gbif_v7_mortalidad.ipynb`](../exploracion_biodiversidad_gbif_v7_mortalidad.ipynb) | [`exploracion_biodiversidad_gbif_v4_es_pt.ipynb`](../exploracion_biodiversidad_gbif_v4_es_pt.ipynb) |
+| Cuaderno | [`exploracion_biodiversidad_gbif_v7_mortalidad.ipynb`](../notebooks/exploracion_biodiversidad_gbif_v7_mortalidad.ipynb) | [`exploracion_biodiversidad_gbif_v4_es_pt.ipynb`](../notebooks/exploracion_biodiversidad_gbif_v4_es_pt.ipynb) |
 | Ámbito por defecto | España (`country=ES`) | España y Portugal (`country=ES` y `country=PT`) |
 | Consulta principal | *Canis lupus*, 2020–2026, con coordenadas y sin incidencias geoespaciales señaladas por GBIF | Mismos filtros de especie, periodo y calidad espacial, pero para ambos países. La especie y el periodo se configuran en el cuaderno |
 | Límite | Hasta 600 registros para ES | Hasta 600 registros **en total** para ES+PT, no 600 por país |
@@ -501,10 +518,22 @@ Los nombres binomiales simples se normalizan antes de consultar GBIF y se compru
 
 Para comparar resultados, usa los identificadores `key` y las coordenadas, mantén los mismos filtros y ámbito, y comprueba `total_disponible_gbif` y `MAX_REGISTROS`. Si el total supera el límite, las estadísticas sólo describen la muestra descargada, no todas las ocurrencias disponibles.
 
-### Modo Offline (si ya tienes `registros_gbif_brutos.json`):
+### Otros cuadernos
+
+| Cuaderno | Para qué usarlo |
+|---|---|
+| [`exploracion_biodiversidad_gbif-v6-es-pt.ipynb`](../notebooks/exploracion_biodiversidad_gbif-v6-es-pt.ipynb) | Revisión vigente del catálogo ES+PT y de la descarga de una especie. Preferible a v4 para trabajo nuevo. |
+| [`exploracion_biodiversidad_gbif-v5-es-pt.ipynb`](../notebooks/exploracion_biodiversidad_gbif-v5-es-pt.ipynb) | *Canis lupus* en ES y PT, 2020–2026, solo entre 1.000 y 3.000 m, sin perro doméstico. |
+| [`gbif_multiespecie_es_pt.ipynb`](../notebooks/gbif_multiespecie_es_pt.ipynb) | Lobo, lince, oso y quebrantahuesos: CSV por especie, CSV maestro y mapas, sin base de datos. |
+| [`gbif_multiespecie_es_pt_sqlite_mysql.ipynb`](../notebooks/gbif_multiespecie_es_pt_sqlite_mysql.ipynb) | El mismo lote multi-especie más SQLite (`biodiversidad_gbif.db`) y, en opción, MySQL. Antes se llamaba `gbif_multiespecie_es_pt (1).ipynb`. |
+| [`ingesta_gbif_mysql.ipynb`](../notebooks/ingesta_gbif_mysql.ipynb) y [`analisis_offline_gbif.ipynb`](../notebooks/analisis_offline_gbif.ipynb) | Pipeline MySQL del esquema de `src/` (ingesta y análisis sin red). |
+
+Esa base multi-especie no es `datos/gbif_biodiversidad.sqlite`. La segunda la crean `src/ingesta_gbif_sqlite.py` y la interfaz, con organizaciones y datasets del Registry.
+
+### Modo Offline (si ya tienes `datos/registros_gbif_brutos.json`):
 ```python
 import json
-with open("registros_gbif_brutos.json", encoding="utf-8") as f:
+with open("datos/registros_gbif_brutos.json", encoding="utf-8") as f:
     registros_crudos = json.load(f)
 # Luego ejecutar solo las celdas de análisis (Sección 3+)
 ```
@@ -538,8 +567,14 @@ with open("registros_gbif_brutos.json", encoding="utf-8") as f:
 ### Problema: "Registros descargados: 0"
 **Solución:** Revisar diagnóstico progresivo. Algún filtro está dejando 0 resultados.
 
+### Problema: `CERTIFICATE_VERIFY_FAILED` / certificado autofirmado
+**Solución:** En esta red, Netskope intercepta HTTPS. `src/ingesta_gbif_sqlite.py` y `src/volcarEndpoints.py` cargan `truststore` para usar el almacén de Windows. Instala `truststore` en el mismo intérprete si el cuaderno no pasa por esos módulos.
+
+### Problema: la base SQLite existe pero las tablas están a cero
+**Solución:** `guardar_en_sqlite.py` no descarga nada si se ejecuta solo. La ingesta es `python src\ingesta_gbif_sqlite.py` o el botón Poblar de la interfaz. El archivo vigente es `datos/gbif_biodiversidad.sqlite`.
+
 ---
 
-**Versión:** 1.0  
-**Última actualización:** 2026-11-22  
+**Versión:** 1.1  
+**Última actualización:** 2026-11-26  
 **Autor:** Copilot SDK + gracobjo
