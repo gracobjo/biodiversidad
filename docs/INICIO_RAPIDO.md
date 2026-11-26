@@ -261,8 +261,12 @@ mapa_avistamientos_gbif.html
 cd C:\Users\chuwi\Documents\biodiversidad
 uv venv --python 3.14 .venv
 .venv\Scripts\Activate.ps1
-uv pip install requests pandas folium matplotlib ipykernel
+uv sync --system-certs
+uv pip install matplotlib seaborn
+.venv\Scripts\python.exe -m ipykernel install --user --name=biodiversidad --display-name="Python (biodiversidad)"
 ```
+
+El kernel de los cuadernos es **Python (biodiversidad)**. `--system-certs` hace falta en la red de la Junta.
 
 ### 2. Leer documentación (20-30 min)
 Elige tu ruta según tu rol (arriba).

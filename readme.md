@@ -59,9 +59,12 @@ uv venv --python 3.14 .venv
 # Linux / macOS
 # source .venv/bin/activate
 
-uv pip install requests pandas folium matplotlib ipykernel
-python -m ipykernel install --user --name=gbif-py314 --display-name="Python 3.14 (GBIF)"
+uv sync --system-certs
+uv pip install matplotlib seaborn
+.venv\Scripts\python.exe -m ipykernel install --user --name=biodiversidad --display-name="Python (biodiversidad)"
 ```
+
+`uv sync` instala lo declarado en `pyproject.toml`, `ipykernel` incluido. En la red de la Junta hace falta `--system-certs`. `matplotlib` y `seaborn` solo los piden los cuadernos de exploración. El kernel de los cuadernos es **Python (biodiversidad)**.
 
 ### Opción B: Usando `venv` y `pip`
 
@@ -74,8 +77,8 @@ python -m venv .venv
 # source .venv/bin/activate
 
 python -m pip install --upgrade pip
-python -m pip install requests pandas folium matplotlib ipykernel
-python -m ipykernel install --user --name=gbif-py314 --display-name="Python 3.14 (GBIF)"
+python -m pip install requests pandas folium matplotlib seaborn ipykernel truststore sqlalchemy mysql-connector-python python-dotenv urllib3
+python -m ipykernel install --user --name=biodiversidad --display-name="Python (biodiversidad)"
 ```
 
 > **Modo offline:** Si deseas explorar los datos sin realizar peticiones HTTP a la API de GBIF, carga directamente `datos/registros_gbif_brutos.json` desde la Sección 2b del cuaderno v7.

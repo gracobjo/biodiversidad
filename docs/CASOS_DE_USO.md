@@ -159,15 +159,13 @@ Actores: persona investigadora, persona analista, persona ingeniera de datos. La
 
 **Disparador.** El ranking global de GBIF solo muestra aves y hace falta ver también mamíferos, escamosos, anfibios, insectos y plantas.
 
-**Precondición.** Hay red. Si después se va a poblar o consultar la base, tiene que estar iniciada.
+**Precondición.** Hay red. El cuaderno se ejecuta con el kernel **Python (biodiversidad)**, el intérprete de `.venv`. Si después se va a poblar o consultar la base, tiene que estar iniciada.
 
 **Flujo.**
 
-1. En la interfaz, pulsa Especies con coordenadas, o abre `notebooks/gbif_especies_por_clase_es_pt.ipynb`.
-2. La tabla muestra cinco especies por clase, con clase, familia y ocurrencias con coordenadas.
-3. Al pulsar una fila, el nombre pasa al cuadro superior. Limpiar devuelve *Canis lupus*.
+1. En la interfaz, pulsa Especies con coordenadas, o abre `notebooks/gbif_especies_por_clase_es_pt.ipynb` y ejecuta las celdas.
+2. La tabla muestra cinco especies por clase, con clase, familia y ocurrencias con coordenadas. Si una clase no responde, se omite y el listado sigue.
+3. Al pulsar una fila de la interfaz, el nombre pasa al cuadro superior. Limpiar devuelve *Canis lupus*.
 4. Ver taxón, Ver ocurrencias, Poblar, las consultas y la exportación usan esa especie.
 
-**Postcondición.** El cuaderno, si se ejecuta hasta el final, guarda `salidas_gbif_multiespecie/especies_por_clase_es_pt.csv`. No descarga ocurrencias.
-
-**Postcondición.** El informe describe la muestra, no el censo de la especie.
+**Postcondición.** El cuaderno, al terminar, guarda `salidas_gbif_multiespecie/especies_por_clase_es_pt.csv`. No descarga ocurrencias.

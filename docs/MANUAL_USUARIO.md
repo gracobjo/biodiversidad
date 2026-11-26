@@ -4,7 +4,7 @@ Este manual es la guía de uso. La especificación vigente, los casos de uso y l
 
 - [CUADERNOS.md](./CUADERNOS.md): qué hace cada cuaderno y cómo ejecutarlo.
 - [ESPECIFICACION_REQUISITOS.md](./ESPECIFICACION_REQUISITOS.md): requisitos funcionales y no funcionales, incluidos SQLite, MySQL, la interfaz y el filtro de ocurrencias.
-- [CASOS_DE_USO.md](./CASOS_DE_USO.md): flujos CU-01 a CU-13.
+- [CASOS_DE_USO.md](./CASOS_DE_USO.md): flujos CU-01 a CU-14.
 - [UML.md](./UML.md): casos de uso, componentes, secuencia, actividad y entidad-relación.
 
 Las secciones 1 a 4 de este manual describen el núcleo de la exploración (v7 y v4). Si discrepan de los tres documentos anteriores, manda el documento específico.
@@ -473,16 +473,21 @@ uv venv --python 3.14 .venv
 # Activar (PowerShell)
 .venv\Scripts\Activate.ps1
 
-# Instalar paquetes
-uv pip install requests pandas folium matplotlib seaborn ipykernel
+# Instalar las dependencias del proyecto, ipykernel incluido
+uv sync --system-certs
+
+# matplotlib y seaborn los usan los cuadernos de exploración y no están en pyproject.toml
+uv pip install matplotlib seaborn
 
 # Registrar kernel para Jupyter
-python -m ipykernel install --user --name=gbif-py314 --display-name="Python 3.14 (GBIF)"
+.venv\Scripts\python.exe -m ipykernel install --user --name=biodiversidad --display-name="Python (biodiversidad)"
 ```
+
+En la red de la Junta, `uv` necesita `--system-certs`. Si no, el certificado del proxy Netskope corta la descarga de paquetes.
 
 ### Ejecución:
 1. Abrir `notebooks/exploracion_biodiversidad_gbif_v7_mortalidad.ipynb`.
-2. Seleccionar kernel **Python 3.14 (GBIF)**.
+2. Seleccionar kernel **Python (biodiversidad)**. El intérprete es `.venv\Scripts\python.exe`.
 3. Ejecutar todas las celdas en orden.
 4. Revisar salidas en `datos/` y `salidas_gbif_multiespecie/`.
 

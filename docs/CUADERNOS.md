@@ -8,8 +8,8 @@ Ejecución habitual:
 
 1. Activar el entorno (`.venv\Scripts\Activate.ps1`).
 2. Abrir el cuaderno.
-3. Elegir ese intérprete como kernel.
-4. Ejecutar las celdas en orden.
+3. Elegir el kernel **Python (biodiversidad)**. Es el intérprete `.venv\Scripts\python.exe`.
+4. Ejecutar las celdas en orden. Si una celda se queda en `[*]` y no imprime el intérprete, el kernel no es ese: interrumpe y vuelve a lanzarla.
 
 La interfaz de escritorio no es un cuaderno. El archivo está en la raíz: `python interfaz_gbif.py`. Antes de Poblar o de Consultas, la base tiene que estar iniciada: en SQLite, el archivo `datos/gbif_biodiversidad.sqlite` con el esquema creado; en MySQL, el servidor en marcha y la base `gbif_biodiversidad` creada.
 
@@ -66,7 +66,7 @@ La copia renderizada de estos dos cuadernos está en `docs/exportaciones/`.
 
 ### `gbif_especies_por_clase_es_pt.ipynb`
 
-Catálogo para ver especies antes de lanzar el multi-especie. Usa la misma función que el botón **Especies con coordenadas** de la interfaz: cinco especies con coordenadas de Mammalia, Squamata, Amphibia, Insecta, Magnoliopsida, Liliopsida y Aves, en España y Portugal (2000–2026). Muestra clase, familia y el recuento, y guarda `salidas_gbif_multiespecie/especies_por_clase_es_pt.csv`. No descarga ocurrencias ni crea base de datos. Los nombres se pueden copiar a `ESPECIES_OBJETIVO` de `gbif_multiespecie_es_pt.ipynb`.
+Catálogo para ver especies antes de lanzar el multi-especie. Usa la misma función que el botón **Especies con coordenadas** de la interfaz: cinco especies con coordenadas de Mammalia, Squamata, Amphibia, Insecta, Magnoliopsida, Liliopsida y Aves, en España y Portugal (2000–2026). Muestra clase, familia y el recuento, y guarda `salidas_gbif_multiespecie/especies_por_clase_es_pt.csv`. No descarga ocurrencias ni crea base de datos. Si una clase no responde, se omite y la celda termina con el resto. Los nombres se pueden copiar a `ESPECIES_OBJETIVO` de `gbif_multiespecie_es_pt.ipynb`. El kernel tiene que ser **Python (biodiversidad)**.
 
 ### `gbif_multiespecie_es_pt.ipynb`
 

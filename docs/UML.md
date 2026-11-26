@@ -16,6 +16,7 @@ flowchart LR
   inv --> CU04[CU-04 Catálogo ibérico]
   inv --> CU06[CU-06 Comparar especies]
   inv --> CU12[CU-12 Exportar tabla y mapa]
+  inv --> CU14[CU-14 Ver especies de varias clases]
   ana --> CU03[CU-03 Separar lobo y perro]
   ana --> CU11[CU-11 Filtrar ocurrencias]
   ana --> CU10[CU-10 Analizar sin red]
@@ -27,6 +28,7 @@ flowchart LR
   CU01 --> gbif
   CU04 --> gbif
   CU06 --> gbif
+  CU14 --> gbif
   CU08 --> gbif
   CU09 --> gbif
   CU09 --> mysql
@@ -42,6 +44,7 @@ flowchart TB
     v6[v4 y v6 catálogo ES+PT]
     v5[v5 altitud]
     multi[multi-especie CSV y mapas]
+    clases[especies por clase]
     multibd[multi-especie SQLite y MySQL]
     ingesta[ingesta MySQL]
     offline[análisis offline MySQL]
@@ -60,6 +63,7 @@ flowchart TB
   end
 
   ui --> servicio
+  ui --> descarga
   ui --> csqlite
   ui --> cmysql
   ui --> exporta
@@ -76,6 +80,8 @@ flowchart TB
   descarga --> gbif[API GBIF]
   v7 --> gbif
   multi --> gbif
+  clases --> gbif
+  clases --> html
   exporta --> html[salidas_gbif_multiespecie]
 ```
 
@@ -104,6 +110,7 @@ classDiagram
   }
   class DescargaGbif {
     +obtener_taxon(nombre)
+    +listar_especies_con_coordenadas(paises, anios, limite)
     +descargar_desde_gbif(especie, paises, anios, maximo)
   }
   class GuardarSqlite {
@@ -127,6 +134,7 @@ classDiagram
   }
 
   AplicacionGbif --> ServicioBd
+  AplicacionGbif --> DescargaGbif
   AplicacionGbif --> Consulta
   AplicacionGbif --> Exportacion
   ServicioBd --> DescargaGbif

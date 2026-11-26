@@ -82,7 +82,7 @@ Qué hace cada `.ipynb` de `notebooks/`, cuándo usarlo y dónde deja CSV, JSON,
 Requisitos funcionales RF-01 a RF-21 y no funcionales, incluidos persistencia, interfaz, filtro de ocurrencias y catálogo por clase.
 
 ### 6. **[CASOS_DE_USO.md](./CASOS_DE_USO.md)**
-Trece casos, del cuaderno de mortalidad a la carga SQLite/MySQL y al filtro de la tabla ya visible.
+Catorce casos, del cuaderno de mortalidad al catálogo por clases, la carga SQLite/MySQL y el filtro de la tabla ya visible.
 
 ### 7. **[UML.md](./UML.md)**
 Casos de uso, componentes, módulos, secuencias de ingesta y de filtrado, actividad y los dos modelos entidad-relación.
