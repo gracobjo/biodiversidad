@@ -13,7 +13,7 @@ Ejecución habitual:
 3. Elegir el kernel **Python (biodiversidad)**.
 4. Ejecutar las celdas en orden. Si una celda se queda en `[*]` y no imprime el intérprete, interrumpe y vuelve a lanzarla con ese kernel.
 
-La interfaz de escritorio no es un cuaderno. El archivo está en la raíz: `python interfaz_gbif.py`. Antes de Poblar o de Consultas, la base tiene que estar iniciada: en SQLite, el archivo `datos/gbif_biodiversidad.sqlite` con el esquema creado; en MySQL, el servidor en marcha y la base `gbif_biodiversidad` creada.
+Hay dos ventanas de escritorio, ninguna es un cuaderno. `python app_tkinter.py` abre la de MySQL: ingesta y consultas pasan por el ORM (`get_session` y `BiodiversidadRepository`). `python interfaz_gbif.py` abre la ventana que también usa SQLite y exporta CSV, JSON y HTML. Antes de poblar o consultar, la base tiene que estar iniciada: en SQLite, el archivo `datos/gbif_biodiversidad.sqlite` con el esquema creado; en MySQL, el servidor en marcha, la base `gbif_biodiversidad` creada y `.env` con la conexión.
 
 ## Cuál usar
 
@@ -61,11 +61,11 @@ Archivo de la primera exploración ibérica. Antes se llamaba `exploracion_biodi
 
 ### `ingesta_gbif_mysql.ipynb`
 
-Fase A del pipeline MySQL descrito en `documentacion_del_pipeline_gbif_y_mysql_8.md`. Resuelve el taxón, pagina ocurrencias (por defecto *Canis lupus*, ES y PT, 2000–2026, máximo 1.000 por país) y llama a `src/volcarEndpoints.py`. Hace falta MySQL 8, el esquema `docs/schema_gbif.sql` y `src/db_config.py`.
+Fase A del pipeline MySQL descrito en `documentacion_del_pipeline_gbif_y_mysql_8.md`. Resuelve el taxón, pagina ocurrencias (por defecto *Canis lupus*, ES y PT, 2000–2026, máximo 1.000 por país) y llama a `guardar_en_mysql`, que escribe con el ORM. La primera celda recarga `repository` y `volcarEndpoints` para que el kernel coja el código nuevo. Hace falta MySQL 8, el esquema `docs/schema_gbif.sql` y `.env`. La misma ingesta está en la pestaña Traer datos de GBIF de `python app_tkinter.py`.
 
 ### `analisis_offline_gbif.ipynb`
 
-Fase B. Lee MySQL con `src/consulta_gbif.py`: resumen, ocurrencias, filtro de lobo silvestre, territorio, datasets, campos dentro de `raw_json` y mapa Folium. No llama a la API.
+Fase B. Lee MySQL con `src/consulta_gbif.py`, que abre `get_session()` y usa `BiodiversidadRepository`: resumen, ocurrencias, filtro de lobo silvestre, territorio, datasets, campos dentro de `raw_json` y mapa Folium. El mapa llama a `activar_enlaces_externos` para que la ficha de GBIF se abra desde la vista del cuaderno. No llama a la API. La misma consulta está en la pestaña Consultar de `python app_tkinter.py`: al abrir muestra la tabla y la ficha del registro; el mapa y el CSV salen de esas filas.
 
 La copia en Markdown de estos dos cuadernos, y la de `gbif_especies_por_clase_es_pt.ipynb`, está en `docs/exportaciones/`. El mapa Folium del análisis offline no se incrusta: queda en `salidas_gbif_multiespecie/mapa_ocurrencias_gbif.html`.
 

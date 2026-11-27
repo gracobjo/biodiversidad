@@ -85,7 +85,7 @@ Requisitos funcionales RF-01 a RF-21 y no funcionales, incluidos persistencia, i
 Catorce casos, del cuaderno de mortalidad al catálogo por clases, la carga SQLite/MySQL y el filtro de la tabla ya visible.
 
 ### 7. **[UML.md](./UML.md)**
-Casos de uso, componentes, módulos, secuencias de ingesta y de filtrado, actividad y los dos modelos entidad-relación.
+Casos de uso, componentes, la ventana ORM (`app_tkinter.py`, `BiodiversidadRepository` y las entidades de `models.py`), secuencias de ingesta y de filtrado, actividad y los dos modelos entidad-relación.
 
 ### 8. Pipelines
 - [documentacion_del_pipeline_gbif_y_sqlite.md](./documentacion_del_pipeline_gbif_y_sqlite.md)

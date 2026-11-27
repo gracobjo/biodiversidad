@@ -25,7 +25,8 @@ Trabajar con datos abiertos de biodiversidad requiere ir más allá de descargar
 ## 🗂️ Estructura del repositorio
 
 ```text
-├── interfaz_gbif.py                   # Interfaz Tkinter
+├── app_tkinter.py                     # Ventana MySQL: Consultar y Traer datos de GBIF
+├── interfaz_gbif.py                   # Ventana de escritorio (API, SQLite, MySQL y exportación)
 ├── notebooks/                         # Cuadernos. Guía: docs/CUADERNOS.md
 │   ├── exploracion_01_canis_lupus_espana_mortalidad.ipynb  # empieza aquí
 │   ├── exploracion_02_catalogo_especies_es_pt.ipynb
@@ -34,14 +35,19 @@ Trabajar con datos abiertos de biodiversidad requiere ir más allá de descargar
 │   ├── gbif_especies_por_clase_es_pt.ipynb
 │   ├── gbif_multiespecie_es_pt.ipynb
 │   └── gbif_multiespecie_es_pt_sqlite_mysql.ipynb
-├── src/                               # Ingesta y consultas
+├── src/                               # ORM MySQL, ingesta y consultas
+│   ├── database.py                    # Motor SQLAlchemy y get_session()
+│   ├── models.py                      # Taxon, Organizacion, Dataset, Ocurrencia
+│   ├── repository.py                  # Upserts y consultas del repositorio
+│   ├── gui_tk.py                      # Ventana que abre app_tkinter.py
+│   └── mapa_enlaces.py                # Abre las fichas GBIF desde el mapa del cuaderno
 ├── datos/                             # SQLite del pipeline, JSON bruto y CSV archivado
 ├── salidas_gbif_multiespecie/         # CSV, HTML y la SQLite del cuaderno multi-especie
 ├── docs/                              # Manual, requisitos, casos de uso, UML y diccionario
 └── readme.md
 ```
 
-La interfaz se abre con `python interfaz_gbif.py`. Antes de poblar o consultar, la base tiene que estar iniciada: `datos/gbif_biodiversidad.sqlite` ya creado, o MySQL 8 en marcha con la base `gbif_biodiversidad`. **Especies con coordenadas** muestra cinco especies de cada clase, con familia; las consultas y la exportación siguen a la especie elegida. El catálogo también está en `notebooks/gbif_especies_por_clase_es_pt.ipynb`. El cuaderno de mortalidad está en `notebooks/exploracion_01_canis_lupus_espana_mortalidad.ipynb`. El JSON bruto está en `datos/registros_gbif_brutos.json`.
+MySQL se consulta y se escribe con SQLAlchemy ORM. Las credenciales están en `.env` (`DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`); `src/db_config.py` las carga y `src/database.py` abre la sesión con `get_session()`. La ventana de ese camino es `python app_tkinter.py`. Al abrirla, la pestaña Consultar muestra la tabla, cuántas filas hay con el filtro y la ficha del registro; desde ahí se exporta el CSV y el mapa. La pestaña Traer datos de GBIF descarga con una barra de progreso y se puede cancelar antes de escribir en MySQL. `python interfaz_gbif.py` sigue siendo la ventana que también trabaja con SQLite y exporta CSV, JSON y HTML. Antes de poblar o consultar, la base tiene que estar iniciada: `datos/gbif_biodiversidad.sqlite` ya creado, o MySQL 8 en marcha con la base `gbif_biodiversidad`. **Especies con coordenadas** muestra cinco especies de cada clase, con familia; las consultas y la exportación siguen a la especie elegida. El catálogo también está en `notebooks/gbif_especies_por_clase_es_pt.ipynb`. El cuaderno de mortalidad está en `notebooks/exploracion_01_canis_lupus_espana_mortalidad.ipynb`. El JSON bruto está en `datos/registros_gbif_brutos.json`. El detalle del ORM está en [`docs/documentacion_del_pipeline_gbif_y_mysql_8.md`](./docs/documentacion_del_pipeline_gbif_y_mysql_8.md).
 
 ---
 

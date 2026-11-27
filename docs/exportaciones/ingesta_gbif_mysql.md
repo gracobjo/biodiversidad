@@ -1,8 +1,9 @@
 # Fase A: Ingesta de Datos GBIF a MySQL 8
 
-Este cuaderno ejecuta la extracción desde la API pública de GBIF (`/v1/species/match`, `/v1/occurrence/search` y catálogos del *Registry*) y persiste los datos de forma idempotente en la base de datos local `gbif_biodiversidad` mediante `src/volcarEndpoints.py`.
+Este cuaderno ejecuta la extracción desde la API pública de GBIF (`/v1/species/match`, `/v1/occurrence/search` y catálogos del *Registry*) y persiste los datos de forma idempotente en `gbif_biodiversidad`. `guardar_en_mysql` abre `get_session()` y escribe con `BiodiversidadRepository`. La misma carga está en la pestaña Traer datos de GBIF de `python app_tkinter.py`.
 
 ```python
+import importlib
 import sys
 import time
 from pathlib import Path
@@ -10,10 +11,19 @@ import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
-# Añadir carpeta src/ al path para importar volcarEndpoints y db_config
-ruta_src = (Path.cwd() if (Path.cwd() / "src").exists() else Path.cwd().parent) / "src".resolve()
+raiz = Path.cwd()
+if not (raiz / "src").is_dir():
+    raiz = raiz.parent
+ruta_src = raiz / "src"
+ruta_src = ruta_src.resolve()
 if str(ruta_src) not in sys.path:
-    sys.path.append(str(ruta_src))
+    sys.path.insert(0, str(ruta_src))
+
+import repository
+import volcarEndpoints
+
+importlib.reload(repository)
+importlib.reload(volcarEndpoints)
 
 from volcarEndpoints import guardar_en_mysql
 from db_config import DB_CONFIG
@@ -179,6 +189,8 @@ guardar_en_mysql(
     Carga completada: 1 taxón, 12 organizaciones, 17 datasets y 2000 ocurrencias.
 
 ## 4. Verificación rápida en MySQL
+
+La carga del apartado anterior ya está hecha con el ORM. Esta celda solo comprueba el resultado con un `GROUP BY`. No es el camino de lectura de `consulta_gbif` ni de `app_tkinter.py`.
 
 ```python
 import pandas as pd

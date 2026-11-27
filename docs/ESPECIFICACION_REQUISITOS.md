@@ -1,6 +1,6 @@
 # Especificación de requisitos
 
-Sistema de consulta, ingesta y análisis de ocurrencias de biodiversidad a partir de la API pública de GBIF. Cubre los cuadernos de `notebooks/`, el código de `src/` y la interfaz de escritorio `interfaz_gbif.py`, en la raíz del proyecto.
+Sistema de consulta, ingesta y análisis de ocurrencias de biodiversidad a partir de la API pública de GBIF. Cubre los cuadernos de `notebooks/`, el código de `src/` y dos ventanas en la raíz: `app_tkinter.py` (MySQL con SQLAlchemy ORM) e `interfaz_gbif.py` (API, SQLite, MySQL y exportación).
 
 Los casos de uso están en [CASOS_DE_USO.md](./CASOS_DE_USO.md). Los diagramas están en [UML.md](./UML.md). El manual operativo sigue en [MANUAL_USUARIO.md](./MANUAL_USUARIO.md).
 
@@ -88,7 +88,7 @@ Fuera del alcance:
 | RNF-03 | Una carga interrumpida no deja una transacción a medias: SQLite y MySQL hacen commit al final o rollback. |
 | RNF-04 | Repetir la ingesta con las mismas claves no duplica filas. |
 | RNF-05 | Las consultas locales no necesitan red. La descarga sí. |
-| RNF-06 | `src/db_config.py` y los `.env` con contraseñas no se versionan. |
+| RNF-06 | La contraseña de MySQL está en `.env` y no se versiona. `src/db_config.py` solo la lee. |
 | RNF-07 | Los cuadernos y la interfaz se pueden volver a ejecutar cambiando especie, países, años y máximo. |
 | RNF-08 | Los textos de la interfaz y de los mensajes de error están en español. |
 | RNF-09 | La interfaz no bloquea la ventana durante la descarga ni durante las consultas. |
@@ -104,7 +104,7 @@ Modelo de `src/` (SQLite y MySQL), una fila por clave de GBIF:
 | `datasets` | `dataset_key` | `/v1/dataset/{key}` |
 | `ocurrencias` | `occurrence_key` | `/v1/occurrence/search` |
 
-`ocurrencias` referencia a las otras tres. En SQLite las claves foráneas solo se comprueban si la conexión ejecuta `PRAGMA foreign_keys = ON`. `raw_json` guarda la respuesta original (tipo `TEXT` en SQLite y `JSON` en MySQL).
+`ocurrencias` referencia a las otras tres. En MySQL esas claves foráneas son anulables: si el registro cita un taxón, un dataset o una organización que no está en el catálogo, el ORM deja la clave vacía y guarda la ocurrencia. En SQLite las claves foráneas solo se comprueban si la conexión ejecuta `PRAGMA foreign_keys = ON`. `raw_json` guarda la respuesta original (tipo `TEXT` en SQLite y `JSON` en MySQL). Las clases `Taxon`, `Organizacion`, `Dataset` y `Ocurrencia` de `src/models.py` mapean estas tablas.
 
 Modelo del cuaderno multi-especie con base de datos: `taxones`, `ocurrencias`, `ocurrencia_media`, vista `vw_ocurrencias_completas`, archivo `salidas_gbif_multiespecie/biodiversidad_gbif.db`.
 
@@ -116,7 +116,7 @@ Modelo del cuaderno multi-especie con base de datos: `taxones`, `ocurrencias`, `
 | `https://api.gbif.org/v1/occurrence/search` | Ocurrencias. `limit` ≤ 300. |
 | `https://api.gbif.org/v1/organization/{key}` | Institución publicadora, solo en la ingesta de `src/`. |
 | `https://api.gbif.org/v1/dataset/{key}` | Metadatos del dataset, solo en la ingesta de `src/`. |
-| MySQL 8 en el host indicado por el formulario o por `db_config.py` | Destino opcional. |
+| MySQL 8, host y credenciales de `.env` (`app_tkinter.py`, cuadernos y `interfaz_gbif.py`) | Destino opcional. La sesión la abre `src/database.get_session`. |
 | Sistema de archivos | `datos/`, `salidas_gbif_multiespecie/`, `notebooks/`. |
 
 ## 7. Restricciones

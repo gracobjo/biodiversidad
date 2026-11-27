@@ -98,13 +98,13 @@ Actores: persona investigadora, persona analista, persona ingeniera de datos. La
 
 ## CU-09 Crear y poblar MySQL del pipeline
 
-**Precondición.** La base tiene que estar iniciada: el servidor MySQL 8 está en marcha, la base `gbif_biodiversidad` existe y las credenciales están en `src/db_config.py` o en el formulario.
+**Precondición.** La base tiene que estar iniciada: el servidor MySQL 8 está en marcha, la base `gbif_biodiversidad` existe y `.env` tiene `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD` y `DB_NAME`. `src/db_config.py` solo lee ese archivo.
 
 **Flujo.**
 
 1. Aplica `docs/schema_gbif.sql`.
-2. Ejecuta `notebooks/ingesta_gbif_mysql.ipynb` o, en la interfaz, elige MySQL y pulsa Crear y Poblar.
-3. Ejecuta `notebooks/analisis_offline_gbif.ipynb` o las consultas de la interfaz.
+2. Ejecuta `notebooks/ingesta_gbif_mysql.ipynb`, la pestaña Traer datos de GBIF de `python app_tkinter.py`, o en `interfaz_gbif.py` elige MySQL y pulsa Crear y Poblar. Las tres vías terminan en el repositorio ORM.
+3. Ejecuta `notebooks/analisis_offline_gbif.ipynb`, la pestaña Consultar de `app_tkinter.py` o las consultas de `interfaz_gbif.py`.
 
 **Excepción.** Si la conexión es rechazada, no se escribe nada. SQLite sigue siendo utilizable.
 

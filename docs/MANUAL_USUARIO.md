@@ -489,13 +489,14 @@ El entorno virtual es la carpeta `.venv`. El kernel **Python (biodiversidad)** e
 3. Ejecutar todas las celdas en orden.
 4. Revisar salidas en `datos/` y `salidas_gbif_multiespecie/`.
 
-La interfaz de escritorio, desde la raíz del proyecto:
+Dos ventanas de escritorio, desde la raíz del proyecto:
 
 ```powershell
+python app_tkinter.py
 python interfaz_gbif.py
 ```
 
-Ahí se consulta la API, se crea y se puebla SQLite o MySQL, se lanzan las consultas locales, se filtra el listado de ocurrencias y se exporta a CSV, JSON y HTML. El detalle está en [CUADERNOS.md](./CUADERNOS.md).
+`app_tkinter.py` es la ventana de MySQL. Al abrirla ya hay una consulta. La pestaña Consultar filtra, muestra la ficha del registro, el mapa y el CSV de lo que está en pantalla. La pestaña Traer datos de GBIF descarga con progreso y se puede cancelar antes de escribir. La conexión sale de `.env` a través de `src/database.py`. `interfaz_gbif.py` consulta la API, crea y puebla SQLite o MySQL, filtra el listado y exporta a CSV, JSON y HTML. El detalle está en [CUADERNOS.md](./CUADERNOS.md) y en [documentacion_del_pipeline_gbif_y_mysql_8.md](./documentacion_del_pipeline_gbif_y_mysql_8.md).
 
 **Especies con coordenadas** lista cinco especies de cada clase (mamíferos, escamosos, anfibios, insectos, plantas y aves), con su familia. Pulsar una fila la escribe arriba. **Limpiar** devuelve *Canis lupus*. Ver taxón, Ver ocurrencias, Poblar y la pestaña Consultas usan esa especie. La exportación propone un fichero con su nombre (`turdus_merula.csv`, `.json` o `.html`) y lo repite dentro del archivo: columna en el CSV, campo `especie` en el JSON y recuadro en el mapa. El mismo catálogo, sin descargar ocurrencias, está en [`gbif_especies_por_clase_es_pt.ipynb`](../notebooks/gbif_especies_por_clase_es_pt.ipynb).
 

@@ -212,6 +212,43 @@ class BiodiversidadRepository:
     # ------------------------------------------------------------------
     # CONSULTAS ANALÍTICAS ORM (FASE B OFFLINE)
     # ------------------------------------------------------------------
+    def _filtros_ocurrencias(
+        self,
+        paises: Sequence[str],
+        solo_lobo_silvestre: bool,
+        anio_min: int | None,
+        comunidad: str | None,
+        taxon_key: int | None,
+    ) -> list[Any]:
+        filtros: list[Any] = [Ocurrencia.country_code.in_(list(paises))]
+        if taxon_key is not None:
+            filtros.append(Ocurrencia.taxon_key == taxon_key)
+        if solo_lobo_silvestre:
+            filtros.append(Ocurrencia.specific_epithet == "lupus")
+            filtros.append(
+                or_(
+                    Ocurrencia.infraspecific_epithet.is_(None),
+                    Ocurrencia.infraspecific_epithet != "familiaris",
+                )
+            )
+        if anio_min is not None:
+            filtros.append(Ocurrencia.year >= anio_min)
+        if comunidad:
+            filtros.append(Ocurrencia.comunidad_gadm == comunidad)
+        return filtros
+
+    def contar_ocurrencias(
+        self,
+        paises: Sequence[str] = ("ES", "PT"),
+        solo_lobo_silvestre: bool = True,
+        anio_min: int | None = None,
+        comunidad: str | None = None,
+        taxon_key: int | None = None,
+    ) -> int:
+        """Cuenta las filas del mismo filtro que buscar_ocurrencias, sin el límite de pantalla."""
+        filtros = self._filtros_ocurrencias(paises, solo_lobo_silvestre, anio_min, comunidad, taxon_key)
+        return self.session.scalar(select(func.count()).select_from(Ocurrencia).where(*filtros)) or 0
+
     def buscar_ocurrencias(
         self,
         paises: Sequence[str] = ("ES", "PT"),
@@ -225,25 +262,8 @@ class BiodiversidadRepository:
         Ordena solo las claves. MySQL falla con el error 1038 si el ORDER BY
         incluye raw_json, porque el buffer de ordenación no cabe con ese JSON.
         """
-        filtros: list[Any] = [Ocurrencia.country_code.in_(list(paises))]
-
-        if taxon_key is not None:
-            filtros.append(Ocurrencia.taxon_key == taxon_key)
-
-        if solo_lobo_silvestre:
-            filtros.append(Ocurrencia.specific_epithet == "lupus")
-            filtros.append(
-                or_(
-                    Ocurrencia.infraspecific_epithet.is_(None),
-                    Ocurrencia.infraspecific_epithet != "familiaris",
-                )
-            )
-
-        if anio_min is not None:
-            filtros.append(Ocurrencia.year >= anio_min)
-
+        filtros = self._filtros_ocurrencias(paises, solo_lobo_silvestre, anio_min, comunidad, taxon_key)
         if comunidad:
-            filtros.append(Ocurrencia.comunidad_gadm == comunidad)
             orden = (
                 Ocurrencia.provincia_gadm.is_(None),
                 Ocurrencia.provincia_gadm.asc(),

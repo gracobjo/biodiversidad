@@ -41,7 +41,8 @@ src/prueba_lectura_sqlite.py         batería de lectura por consola
 
 ```text
 biodiversidad/
-├── interfaz_gbif.py                   # Ventana de escritorio (API, base, consultas, exportación)
+├── app_tkinter.py                     # Ventana MySQL sobre el ORM. No usa este pipeline SQLite
+├── interfaz_gbif.py                   # Ventana de escritorio (API, SQLite, MySQL y exportación)
 ├── src/
 │   ├── db_sqlite_config.py              # Rutas del archivo SQLite y del DDL
 │   ├── gbif_biodiversidad_sqlite.py     # Crea el archivo y aplica el esquema

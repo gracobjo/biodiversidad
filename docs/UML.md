@@ -1,6 +1,6 @@
 # Diagramas UML
 
-Los diagramas describen el sistema tal como está en `interfaz_gbif.py` (raíz), `src/` y `notebooks/`. Los requisitos y los casos de uso que aparecen aquí están detallados en [ESPECIFICACION_REQUISITOS.md](./ESPECIFICACION_REQUISITOS.md) y [CASOS_DE_USO.md](./CASOS_DE_USO.md).
+Los diagramas describen el sistema tal como está en `app_tkinter.py`, `interfaz_gbif.py`, `src/` y `notebooks/`. MySQL se lee y se escribe con las entidades de `models.py` y `BiodiversidadRepository`. SQLite sigue en funciones y `DataFrame`. Los requisitos y los casos de uso están en [ESPECIFICACION_REQUISITOS.md](./ESPECIFICACION_REQUISITOS.md) y [CASOS_DE_USO.md](./CASOS_DE_USO.md).
 
 ## 1. Casos de uso
 
@@ -52,6 +52,7 @@ flowchart TB
   end
 
   ui[interfaz_gbif.py]
+  orm[app_tkinter.py]
 
   subgraph codigo [src]
     servicio[servicio_bd]
@@ -60,7 +61,10 @@ flowchart TB
     mysqlpy[volcarEndpoints]
     csqlite[consulta_gbif_sqlite]
     cmysql[consulta_gbif]
+    repo[repository]
+    sesion[database.get_session]
     exporta[exportacion_gbif]
+    ventana[gui_tk]
   end
 
   ui --> servicio
@@ -68,16 +72,20 @@ flowchart TB
   ui --> csqlite
   ui --> cmysql
   ui --> exporta
+  orm --> ventana
+  ventana --> sesion
   servicio --> descarga
   servicio --> sqlite
   servicio --> mysqlpy
   ingesta --> mysqlpy
   offline --> cmysql
+  mysqlpy --> sesion
+  cmysql --> sesion
+  sesion --> repo
   multibd --> salidas[(biodiversidad_gbif.db)]
   sqlite --> datos[(datos/gbif_biodiversidad.sqlite)]
   csqlite --> datos
-  cmysql --> mysql[(MySQL gbif_biodiversidad)]
-  mysqlpy --> mysql
+  repo --> mysql[(MySQL gbif_biodiversidad)]
   descarga --> gbif[API GBIF]
   n01 --> gbif
   n02 --> gbif
@@ -91,7 +99,7 @@ flowchart TB
 
 ## 3. Clases y módulos de la interfaz
 
-No hay un modelo de dominio con clases persistentes. La unidad de trabajo es el `DataFrame` y las funciones de cada módulo.
+`interfaz_gbif.py` trabaja con `DataFrame` y con las funciones de cada módulo. El modelo persistente de MySQL está en la sección 3.1.
 
 ```mermaid
 classDiagram
@@ -146,7 +154,75 @@ classDiagram
   ServicioBd --> GuardarMysql
 ```
 
-`Consulta` está implementada dos veces, con el mismo contrato: `consulta_gbif_sqlite.py` y `consulta_gbif.py`.
+`Consulta` está implementada dos veces, con el mismo contrato: `consulta_gbif_sqlite.py` (SQL sobre SQLite) y `consulta_gbif.py` (fachada que abre `get_session` y delega en el repositorio).
+
+## 3.1. ORM de MySQL
+
+`app_tkinter.py` llama a `lanzar_gui()`. La ventana y los cuadernos de MySQL comparten sesión y repositorio.
+
+```mermaid
+classDiagram
+  class BiodiversidadApp {
+    +consultar()
+    +ver_mapa()
+    +exportar_csv()
+    +descargar()
+    +abrir_ficha()
+  }
+  class Session {
+    +commit()
+    +rollback()
+    +close()
+  }
+  class BiodiversidadRepository {
+    +upsert_taxon()
+    +upsert_organizaciones()
+    +upsert_datasets()
+    +upsert_ocurrencias()
+    +buscar_ocurrencias()
+    +contar_ocurrencias()
+    +resumen_conteo_tablas()
+    +resumen_territorial()
+    +top_datasets_publicadores()
+  }
+  class Taxon {
+    +taxon_key
+    +scientific_name
+    +taxon_rank
+  }
+  class Organizacion {
+    +organization_key
+    +title
+  }
+  class Dataset {
+    +dataset_key
+    +title
+    +publishing_organization_key
+  }
+  class Ocurrencia {
+    +occurrence_key
+    +taxon_key
+    +dataset_key
+    +organization_key
+    +raw_json
+    +url_primera_imagen
+    +es_lobo_silvestre
+  }
+
+  BiodiversidadApp --> Session : get_session()
+  BiodiversidadApp --> BiodiversidadRepository
+  BiodiversidadRepository --> Session
+  BiodiversidadRepository --> Taxon
+  BiodiversidadRepository --> Organizacion
+  BiodiversidadRepository --> Dataset
+  BiodiversidadRepository --> Ocurrencia
+  Ocurrencia --> Taxon
+  Ocurrencia --> Dataset
+  Ocurrencia --> Organizacion
+  Dataset --> Organizacion
+```
+
+`taxon_key`, `dataset_key` y `organization_key` de `Ocurrencia` admiten nulo. Si el registro cita una clave que no está en el catálogo, el repositorio la vacía y la ocurrencia se guarda.
 
 ## 4. Secuencia: poblar SQLite desde la interfaz
 
