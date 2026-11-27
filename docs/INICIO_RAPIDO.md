@@ -1,5 +1,9 @@
 # 🚀 Inicio Rápido - Documentación Biodiversidad GBIF
 
+La aplicación consulta cualquier especie de GBIF, en cualquier país y en un año o un intervalo de fechas. Guarda en SQLite o en MySQL, y `python app_tkinter.py` abre Consultar, Indicadores y Traer datos de GBIF. *Canis lupus* en España (2020–2026, 600 registros) es la muestra del cuaderno 01, no el límite del programa.
+
+Los apartados de abajo orientan la primera documentación (manual del cuaderno, guía del API y diccionario de esa muestra). El índice vivo es [README.md](./README.md).
+
 ## ¿Qué acabo de descargar?
 
 Has recibido **3 documentos completos** sobre la exploración de biodiversidad con la API de GBIF:
@@ -35,8 +39,9 @@ Has recibido **3 documentos completos** sobre la exploración de biodiversidad c
     └─ Secciones: 1 (RF), 2 (FNF), 3 (Casos de Uso), 5 (Inicio Rápido)
     └─ Tiempo: ~15 minutos
 
-2️⃣  Después: Ejecuta el notebook
-    └─ Archivo: notebooks/exploracion_01_canis_lupus_espana_mortalidad.ipynb
+2️⃣  Después: abre la ventana o el cuaderno de partida
+    └─ Ventana: python app_tkinter.py (Consultar, Indicadores, Traer datos de GBIF)
+    └─ Cuaderno: notebooks/exploracion_01_canis_lupus_espana_mortalidad.ipynb
     └─ Tiempo: ~10 minutos (descarga) + análisis
 ```
 
@@ -158,8 +163,8 @@ Has recibido **3 documentos completos** sobre la exploración de biodiversidad c
 
 ## 🎓 Conceptos Clave Explicados
 
-### Requisitos Funcionales (RF)
-*Lo que el sistema debe hacer*
+### Requisitos del cuaderno de exploración (RF1-RF9)
+*Lo que hace el cuaderno 01. La aplicación completa está en RF-01 a RF-22 de ESPECIFICACION_REQUISITOS.md.*
 - RF1: Resolver nombres científicos a identificadores
 - RF2: Consultar con múltiples filtros
 - RF3: Mantener sesión HTTP persistente
@@ -177,7 +182,7 @@ Has recibido **3 documentos completos** sobre la exploración de biodiversidad c
 - FNF1: **Rendimiento** (600 registros < 10 seg)
 - FNF2: **Confiabilidad** (manejo de errores HTTP)
 - FNF3: **Escalabilidad** (compatible con miles de registros)
-- FNF4: **Reproducibilidad** (snapshot JSON como fuente única)
+- FNF4: **Reproducibilidad** (el JSON conserva la muestra del cuaderno 01)
 - FNF5: **Interoperabilidad** (Darwin Core, ISO 8601, CSV abiertos)
 - FNF6: **Usabilidad** (interfaz Jupyter intuitiva)
 - FNF7: **Seguridad** (sin credenciales en código)
@@ -185,8 +190,8 @@ Has recibido **3 documentos completos** sobre la exploración de biodiversidad c
 
 ---
 
-### Casos de Uso (CU)
-*Escenarios de usuario reales*
+### Casos del primer manual (CU1-CU5)
+*La aplicación completa llega hasta CU-15, en CASOS_DE_USO.md.*
 1. **CU1:** Exploración general (ecólogo estudiando distribución)
 2. **CU2:** Análisis de mortalidad (veterinario estudiando causas de muerte)
 3. **CU3:** Comparativa lobo vs perro (especialista en canis)
@@ -195,7 +200,7 @@ Has recibido **3 documentos completos** sobre la exploración de biodiversidad c
 
 ---
 
-## 🌟 Hallazgos Principales de la Muestra (600 registros)
+## 🌟 Hallazgos del cuaderno 01 (600 registros de *Canis lupus* en España)
 
 | Aspecto | Resultado |
 |---------|-----------|
@@ -218,7 +223,7 @@ datos/registros_gbif_brutos.json
 ├─ 600 registros
 ├─ 130 campos (Darwin Core)
 ├─ Formato: JSON con indentación
-├─ Propósito: Fuente única de verdad
+├─ Propósito: conservar la muestra del cuaderno 01
 └─ Uso: Reutilizable sin volver a consultar API
 
 registros_biodiversidad_gbif.csv

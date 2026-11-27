@@ -1,6 +1,8 @@
 # 📦 Resumen Ejecutivo - Documentación Creada
 
-La documentación posterior a este resumen está en [CUADERNOS.md](./CUADERNOS.md), [ESPECIFICACION_REQUISITOS.md](./ESPECIFICACION_REQUISITOS.md), [CASOS_DE_USO.md](./CASOS_DE_USO.md) y [UML.md](./UML.md). Los cuadernos están en `notebooks/`. El JSON bruto está en `datos/registros_gbif_brutos.json`.
+Este resumen describe el primer paquete documental. La aplicación, desde entonces, consulta cualquier especie, país y periodo, guarda en SQLite o MySQL y calcula indicadores en `app_tkinter.py`. Las cifras de lobo y perro son la muestra del cuaderno 01.
+
+La documentación posterior está en [CUADERNOS.md](./CUADERNOS.md), [ESPECIFICACION_REQUISITOS.md](./ESPECIFICACION_REQUISITOS.md), [CASOS_DE_USO.md](./CASOS_DE_USO.md) y [UML.md](./UML.md). Los cuadernos están en `notebooks/`. El JSON de esa muestra está en `datos/registros_gbif_brutos.json`.
 
 ## ✅ Documentos Entregados
 
@@ -149,7 +151,9 @@ docs/
 
 ## 📊 Hallazgos Principales Documentados
 
-### Muestra Analizada (600 registros)
+### Muestra del cuaderno 01 (600 registros de *Canis lupus* en España)
+
+Estas filas no resumen la base MySQL ni las demás especies.
 
 | Métrica | Resultado |
 |---------|-----------|
@@ -252,7 +256,7 @@ Usa diccionario_datos_gbif.md como referencia mientras analizas datos
 ✅ **Diccionario de datos completo:** 130 campos con cobertura y utilidad  
 ✅ **Troubleshooting incluido:** Solución de problemas comunes  
 ✅ **Guía de instalación paso a paso:** Para Windows con `uv`  
-✅ **Reutilización de datos:** JSON bruto como fuente única de verdad  
+✅ **Reutilización de datos:** el JSON bruto relee la muestra del cuaderno 01. MySQL y SQLite guardan el resto de consultas  
 
 ---
 
@@ -260,9 +264,9 @@ Usa diccionario_datos_gbif.md como referencia mientras analizas datos
 
 1. **Instalar:** Python 3.14 + dependencias (5 min)
 2. **Leer:** INICIO_RAPIDO.md → tu ruta personalizada (20-30 min)
-3. **Ejecutar:** Notebook principal (10-15 min)
-4. **Explorar:** CSV y mapa HTML generados (5 min)
-5. **Adaptar:** Cambiar especie, período, país según necesidad (variable)
+3. **Ejecutar:** `python app_tkinter.py`, o el cuaderno 01 (10-15 min)
+4. **Explorar:** CSV y mapa de esa muestra, o la pestaña Indicadores sobre la base (5 min)
+5. **Cambiar especie, país y periodo:** la ventana y los cuadernos de catálogo y multi-especie ya lo hacen
 
 ---
 
@@ -304,6 +308,6 @@ Has recibido una **suite de documentación profesional** que cubre:
 📖 **Diccionario de Datos** con 130 campos documentados  
 📄 **README Índice** con navegación centralizada  
 
-**Todo lo necesario para entender, implementar y mantener una solución de exploración de biodiversidad con GBIF.** 🌿🦁🌍
+**El primer paquete para entender la muestra de *Canis lupus* y el API de GBIF.** La aplicación actual, con cualquier especie, las bases y los indicadores, está en el [README](./README.md) de esta carpeta y en el de la raíz del proyecto.
 
 ¡Que disfrutes! 🚀

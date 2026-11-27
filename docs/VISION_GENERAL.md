@@ -1,6 +1,6 @@
 # 🎯 Visión General - Documentación de Biodiversidad GBIF
 
-Además del paquete inicial, el índice vivo es [README.md](./README.md): cuadernos, requisitos, casos de uso, UML y los dos pipelines (SQLite y MySQL).
+La aplicación consulta cualquier especie en GBIF, elige país y periodo, persiste en SQLite o MySQL y mide indicadores. *Canis lupus* es el ejemplo del cuaderno 01 (600 registros en España, 2020–2026), con la separación de lobo y perro. Este archivo inventaría el primer paquete documental. El índice vivo es [README.md](./README.md): cuadernos, requisitos RF-01 a RF-22, casos CU-01 a CU-15, UML y los dos pipelines (SQLite y MySQL).
 
 ## ¿Qué tiene en sus manos?
 

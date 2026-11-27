@@ -1,5 +1,7 @@
 # 🌍 Guía Explicativa del API GBIF: Global Biodiversity Information Facility
 
+Los ejemplos de *Canis lupus* y los recuentos de 600 registros salen del cuaderno 01. La aplicación resuelve cualquier nombre científico y descarga el país y el periodo que se le pidan.
+
 ## Tabla de Contenidos
 1. [¿Qué es GBIF?](#qué-es-gbif)
 2. [¿Para qué sirve la API de GBIF?](#para-qué-sirve-la-api-de-gbif)

@@ -1,6 +1,6 @@
 # Diccionario de Datos del JSON de GBIF (`datos/registros_gbif_brutos.json`)
 
-Este documento describe la estructura y cobertura de los **600 registros** descargados desde el endpoint `/v1/occurrence/search` de la API pública de GBIF para `taxonKey=5219173` (*Canis lupus* en España, 2020–2026).
+Este documento describe la estructura y cobertura de los **600 registros** del cuaderno 01, descargados desde `/v1/occurrence/search` para `taxonKey=5219173` (*Canis lupus* en España, 2020–2026). Los porcentajes son de esa muestra. La aplicación también descarga otras especies, otros países y otros periodos, y los guarda en SQLite o en MySQL.
 
 El archivo JSON bruto contiene **130 campos de nivel superior**, que al aplanarse con `pd.json_normalize()` generan **181 columnas**. Tras la limpieza y creación de variables derivadas en el notebook, el DataFrame principal `df` conserva **42 columnas** organizadas en seis bloques temáticos.
 

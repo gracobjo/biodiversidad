@@ -9,15 +9,11 @@ Bienvenido a la documentación completa del proyecto de exploración de biodiver
 ### 1. **[MANUAL_USUARIO.md](./MANUAL_USUARIO.md)** 👤
 **Para:** Usuarios finales, investigadores, analistas de datos.
 
-**Contenido:**
-- ✅ **Requisitos Funcionales (RF):** 9 RF detalladas (resolución taxonómica, consulta multicriterio, sesión HTTP, normalización territorial, etc.)
-- ✅ **Requisitos No Funcionales (FNF):** 8 FNF (rendimiento, confiabilidad, escalabilidad, reproducibilidad, interoperabilidad, usabilidad, seguridad, mantenibilidad)
-- ✅ **Casos de Uso (CU):** 5 escenarios principales con flujos completos
-  - CU1: Exploración general de especies
-  - CU2: Análisis de mortalidad
-  - CU3: Comparativa lobo vs. perro
-  - CU4: Validación de calidad de datos
-  - CU5: Integración en pipeline ETL
+**Contenido:** las secciones 1 a 4 describen los cuadernos 01 y 04. La especificación vigente de toda la aplicación (cualquier especie, país y periodo, SQLite, MySQL, las dos ventanas y los indicadores) está en [ESPECIFICACION_REQUISITOS.md](./ESPECIFICACION_REQUISITOS.md) (RF-01 a RF-22) y en [CASOS_DE_USO.md](./CASOS_DE_USO.md) (CU-01 a CU-15).
+
+- ✅ **Requisitos del cuaderno de exploración:** 9 RF (resolución taxonómica, consulta multicriterio, sesión HTTP, normalización territorial, etc.)
+- ✅ **Requisitos no funcionales de ese cuaderno:** 8 FNF (rendimiento, confiabilidad, escalabilidad, reproducibilidad, interoperabilidad, usabilidad, seguridad, mantenibilidad)
+- ✅ **Casos de ese primer manual:** exploración, mortalidad, lobo frente a perro, calidad de la muestra e ingesta
 - ✅ **Diagramas UML:**
   - Diagrama de clases conceptual
   - Diagrama de secuencia del flujo de descarga
@@ -135,7 +131,7 @@ Casos de uso, componentes, la ventana ORM (`app_tkinter.py`, `BiodiversidadRepos
 
 | Archivo | Tipo | Descripción | Uso |
 |---------|------|-------------|-----|
-| `datos/registros_gbif_brutos.json` | JSON | Respuesta raw del API (600 registros, 130 campos) | Fuente única de verdad; reutilizable offline |
+| `datos/registros_gbif_brutos.json` | JSON | Muestra del cuaderno 01: *Canis lupus* en España, 600 registros, 130 campos | Relectura offline de esa descarga. La base MySQL y la SQLite del pipeline guardan otras consultas |
 | `registros_biodiversidad_gbif.csv` | CSV | Dataset normalizado y transformado | Análisis BI, SQL, herramientas estadísticas |
 | `mapa_avistamientos_gbif.html` | HTML | Mapa interactivo Folium | Visualización web; compartir con stakeholders |
 | `registros_<especie>_es_pt.csv` | CSV | Registros seleccionados de ES+PT, exportados por el cuaderno 04 | Comparación territorial |
@@ -159,22 +155,17 @@ Los dos cuadernos aplican el límite de descarga a ámbitos distintos; sus mapas
 
 ---
 
-## 📝 Notas por Proyecto
+## 📝 Alcance de la aplicación
 
-### Especie Actual: *Canis lupus* (Lobo Euroasiático)
+La aplicación no está fija en una especie ni en un país. Cada consulta elige el nombre científico, uno o varios códigos ISO y un año o un intervalo de fechas. MySQL y SQLite acumulan lo descargado. La pestaña Indicadores mide esa base.
+
+### Muestra del cuaderno 01: *Canis lupus*
 - **Nombre científico:** Canis lupus Linnaeus, 1758
 - **usageKey (GBIF):** 5219173
-- **Registros descargados:** 600 (de 2,390 disponibles en GBIF para España 2020-2026)
-- **Distribución en muestra:** Noroeste (Galicia, Asturias, Castilla y León)
-- **Hallazgo en la muestra del cuaderno 01:** 47,5% de los registros tenían `specificEpithet == "familiaris"`; comprueba el nombre aceptado y los demás campos taxonómicos antes de interpretar cada registro.
-
-### Período de Análisis
-- **Rango temporal:** 2020-2026
-- **Nota:** 2026 está en curso al momento de ejecución del notebook
-
-### Geografía
-- **País:** España (ES)
-- **Normalización territorial:** GADM nivel 1 (comunidad autónoma) con 98.8% cobertura
+- **Ámbito de esa descarga:** España, 2020–2026, 600 registros (de 2.390 que GBIF anunciaba entonces)
+- **Distribución en la muestra:** noroeste (Galicia, Asturias, Castilla y León)
+- **Hallazgo:** 47,5 % de los registros tenían `specificEpithet == "familiaris"`. Hay que leer el nombre aceptado y el resto de campos taxonómicos antes de llamar lobo a un registro.
+- **Territorio en la muestra:** GADM de nivel 1 cubría el 98,8 %. El año 2026 estaba en curso.
 
 ---
 
@@ -206,6 +197,7 @@ Si encuentras:
 | 1.0 | 2026-11-22 | Creación inicial: MANUAL_USUARIO.md, GUIA_API_GBIF.md, este índice |
 | 1.1 | 2026-11-27 | Indicadores de MySQL: `src/kpis/`, lanzadores `src/kpi_*.py`, RF-22 y CU-15 |
 | 1.2 | 2026-11-27 | Pestaña Indicadores en la ventana de MySQL |
+| 1.3 | 2026-11-27 | El alcance de la aplicación deja de presentarse como solo el estudio del lobo. La muestra de 600 registros queda acotada al cuaderno 01 |
 
 ---
 
@@ -226,7 +218,7 @@ Si encuentras:
 
 ¿Listo para empezar? Sigue estos pasos:
 
-1. **Comprende el problema:** Lee [MANUAL_USUARIO.md](./MANUAL_USUARIO.md) secciones 1-3
+1. **Comprende la aplicación:** Lee el [README de la raíz](../readme.md). Las secciones 1-3 de [MANUAL_USUARIO.md](./MANUAL_USUARIO.md) son la muestra del cuaderno 01 (*Canis lupus* en España)
 2. **Entiende la API:** Lee [GUIA_API_GBIF.md](./GUIA_API_GBIF.md) secciones 1-3
 3. **Ejecuta el código:** Abre `notebooks/exploracion_01_canis_lupus_espana_mortalidad.ipynb`. La guía de todos los cuadernos es [CUADERNOS.md](./CUADERNOS.md).
 4. **Explora los datos:** Abre `registros_biodiversidad_gbif.csv` en Excel/pandas

@@ -1,4 +1,4 @@
-# 🐺 Exploración de Biodiversidad en España con la API Pública de GBIF
+# Exploración de biodiversidad con la API pública de GBIF
 
 ![Python](https://img.shields.io/badge/Python-3.14-3776AB?style=flat-square&logo=python&logoColor=white)
 ![Pandas](https://img.shields.io/badge/Pandas-Data_Analysis-150458?style=flat-square&logo=pandas&logoColor=white)
@@ -6,26 +6,27 @@
 ![GBIF API](https://img.shields.io/badge/GBIF-OpenAPI_v1-4BA82E?style=flat-square)
 ![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)
 
-Pipeline reproducible en Python para consultar, auditar, normalizar y cartografiar registros de presencia de *Canis lupus* en España (2020–2026) a través de la API REST pública de **GBIF** (*Global Biodiversity Information Facility*).
+Aplicación en Python para consultar la API REST pública de **GBIF** (*Global Biodiversity Information Facility*), guardar las ocurrencias en SQLite o en MySQL 8, consultarlas sin volver a la red, cartografiarlas y calcular indicadores. La especie, el país y el periodo se eligen en cada consulta. El cuaderno de partida estudia *Canis lupus* en España (2020–2026); las cifras de lobo y de perro de más abajo describen esa muestra, no el resto de la aplicación.
 
 ---
 
 ## 🎯 ¿Qué resuelve este proyecto?
 
-Trabajar con datos abiertos de biodiversidad requiere ir más allá de descargar una tabla y pintar puntos en un mapa. Este repositorio implementa un flujo completo de ingeniería y análisis de datos científicos (**ETL + EDA + Cartografía**) que aborda los sesgos habituales en repositorios agregados:
+Trabajar con datos abiertos de biodiversidad requiere ir más allá de descargar una tabla y pintar puntos en un mapa. Este repositorio cubre la descarga, la persistencia, la consulta y la lectura de los sesgos habituales en repositorios agregados:
 
-1. **Resolución taxonómica dinámica (`/v1/species/match`):** evita codificar identificadores internos (`taxonKey`) a mano, validando coincidencias exactas frente al *GBIF Backbone Taxonomy*.
-2. **Diagnóstico progresivo y paginación robusta (`/v1/occurrence/search`):** evalúa el impacto de cada filtro antes de descargar y gestiona la paginación mediante `offset`/`limit` con sesiones HTTP persistentes (`requests.Session`).
-3. **Auditoría taxonómica crítica (*Lobo vs. Perro*):** en GBIF, `taxonKey=5219173` (*Canis lupus*) agrupa tanto lobo salvaje (`specificEpithet == 'lupus'`) como perros domésticos o asilvestrados (`specificEpithet == 'familiaris'`). En la muestra descargada de 600 registros, **el 47,5 % (285 registros) corresponden a perro doméstico**. El cuaderno separa ambos taxones antes de extraer conclusiones ecológicas.
-4. **Normalización territorial GADM:** sustituye el campo heterogéneo `stateProvince` (ausente en el 21 % de los registros) por la jerarquía administrativa normalizada de GBIF (`gadm.level1.name` y `gadm.level2.name`, con **98,8 % de cobertura**).
-5. **Unificación de esfuerzo científico y ciencia ciudadana:** combina `samplingProtocol` (fototrampeo en Proyecto MOMAT, transectos en Observation.org) con el campo JSON incrustado `dynamicProperties -> evidenceOfPresence` de iNaturalist (`scat`, `track`, `bone`, `organism`) en una variable analítica sin valores nulos (`metodo_o_evidencia`), además de auditar mortalidad (`vitality == 'dead'`) y notas de campo (`occurrenceRemarks`).
+1. **Cualquier especie (`/v1/species/match`):** el nombre científico se resuelve contra el *GBIF Backbone Taxonomy*. No se escribe el `taxonKey` a mano. El catálogo por clases lista mamíferos, escamosos, anfibios, insectos, plantas y aves, cinco especies de cada una.
+2. **Cualquier país y cualquier periodo (`/v1/occurrence/search`):** uno o varios códigos ISO, un año, un intervalo de años o un intervalo de fechas. La descarga pagina con `offset`/`limit` y una sesión HTTP persistente.
+3. **Dos bases y dos ventanas:** SQLite en `datos/gbif_biodiversidad.sqlite` y MySQL 8 (`gbif_biodiversidad`), con taxones, organizaciones, datasets y ocurrencias. `python app_tkinter.py` consulta, mide indicadores y trae datos de GBIF. `python interfaz_gbif.py` también trabaja con SQLite y exporta CSV, JSON y HTML.
+4. **Indicadores de lo ya guardado:** volumen, territorio GADM, cobertura de campos, evidencia, taxonomía, calidad de la coordenada y quién publica. Un conteo de registros mide esfuerzo de publicación, no abundancia.
+5. **Lobo y perro, cuando el taxón es *Canis lupus*:** `taxonKey=5219173` agrupa lobo (`specificEpithet == 'lupus'`) y perro (`familiaris`). En la muestra de 600 registros del cuaderno 01, **el 47,5 % (285 registros) corresponden a perro doméstico**. Esa auditoría es de esa descarga.
+6. **Territorio y evidencia en esa misma muestra:** `stateProvince` faltaba en el 21 % de las filas; GADM (`gadm.level1.name` y `gadm.level2.name`) cubría el **98,8 %**. El cuaderno 01 reúne protocolo de muestreo, evidencia de presencia de iNaturalist y mortalidad (`vitality == 'dead'`).
 
 ---
 
 ## 🗂️ Estructura del repositorio
 
 ```text
-├── app_tkinter.py                     # Ventana MySQL: Consultar y Traer datos de GBIF
+├── app_tkinter.py                     # Ventana MySQL: Consultar, Indicadores y Traer datos de GBIF
 ├── interfaz_gbif.py                   # Ventana de escritorio (API, SQLite, MySQL y exportación)
 ├── notebooks/                         # Cuadernos. Guía: docs/CUADERNOS.md
 │   ├── exploracion_01_canis_lupus_espana_mortalidad.ipynb  # empieza aquí
@@ -103,7 +104,9 @@ python -m ipykernel install --user --name=biodiversidad --display-name="Python (
 
 ---
 
-## 📊 Principales hallazgos sobre la muestra analizada (`n = 600`)
+## 📊 Muestra del cuaderno 01 (*Canis lupus* en España, `n = 600`)
+
+Estas cifras salen de `notebooks/exploracion_01_canis_lupus_espana_mortalidad.ipynb` y de `datos/registros_gbif_brutos.json`. No describen la base MySQL, ni el catálogo por clases, ni el cuaderno de varias especies.
 
 | Dimensión analizada | Resultado clave en la muestra |
 | :--- | :--- |

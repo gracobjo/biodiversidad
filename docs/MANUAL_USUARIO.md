@@ -4,10 +4,12 @@ Este manual es la guía de uso. La especificación vigente, los casos de uso y l
 
 - [CUADERNOS.md](./CUADERNOS.md): qué hace cada cuaderno y cómo ejecutarlo.
 - [ESPECIFICACION_REQUISITOS.md](./ESPECIFICACION_REQUISITOS.md): requisitos funcionales y no funcionales, incluidos SQLite, MySQL, la interfaz y el filtro de ocurrencias.
-- [CASOS_DE_USO.md](./CASOS_DE_USO.md): flujos CU-01 a CU-14.
+- [CASOS_DE_USO.md](./CASOS_DE_USO.md): flujos CU-01 a CU-15.
 - [UML.md](./UML.md): casos de uso, componentes, secuencia, actividad y entidad-relación.
 
-Las secciones 1 a 4 de este manual describen el núcleo de la exploración (cuaderno 01, mortalidad en España, y cuaderno 04, archivo del catálogo ES+PT). Si discrepan de los tres documentos anteriores, manda el documento específico.
+La aplicación consulta cualquier especie, en cualquier país y en un año o un intervalo de fechas. Guarda en SQLite o en MySQL, y la ventana `app_tkinter.py` tiene Consultar, Indicadores y Traer datos de GBIF. *Canis lupus* es la especie de partida y el caso en el que hay que separar lobo y perro; no es el límite de la aplicación.
+
+Las secciones 1 a 4 de este manual describen los cuadernos 01 (mortalidad en España) y 04 (archivo del catálogo ES+PT), con su muestra de 600 registros. Los requisitos vigentes son RF-01 a RF-22 y los casos CU-01 a CU-15. Si estas secciones discrepan de esos documentos, mandan los documentos específicos.
 
 ## 1. Requisitos Funcionales (RF)
 
@@ -404,7 +406,7 @@ START
 ┌─────────────────────────────────────┐
 │ 2. Guardar JSON Bruto               │
 │    registros_gbif_brutos.json       │
-│    (Fuente única de verdad)         │
+│    (muestra del cuaderno 01)        │
 └──────────────┬──────────────────────┘
                ↓
 ┌─────────────────────────────────────┐
