@@ -136,6 +136,9 @@ def exportar_mapa_html(df: pd.DataFrame, ruta: Path, especie: str | None = None)
         ).add_to(cluster)
 
     folium.LayerControl().add_to(mapa)
+    from mapa_enlaces import activar_enlaces_externos
+
+    activar_enlaces_externos(mapa)
     destino = Path(ruta)
     destino.parent.mkdir(parents=True, exist_ok=True)
     mapa.save(str(destino))

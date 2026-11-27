@@ -1,256 +1,149 @@
-from contextlib import contextmanager
+from __future__ import annotations
+
+from typing import Any, Sequence
+
 import pandas as pd
-from sqlalchemy import bindparam, create_engine, text
-from sqlalchemy.engine import Engine, URL
 
-_CONFIG_ACTIVA: dict | None = None
-
-
-def usar_config(config: dict | None) -> None:
-    """Fija la conexión MySQL usada por las consultas. None vuelve a db_config.py."""
-    global _CONFIG_ACTIVA
-    _CONFIG_ACTIVA = dict(config) if config is not None else None
+from database import get_session
+from models import Ocurrencia
+from repository import BiodiversidadRepository
 
 
-def _config() -> dict:
-    if _CONFIG_ACTIVA is not None:
-        return _CONFIG_ACTIVA
-    from db_config import DB_CONFIG
-    return DB_CONFIG
+def _numero(valor: Any) -> float | None:
+    if valor is None:
+        return None
+    return float(valor)
 
 
-def crear_engine_gbif() -> Engine:
-    """Crea un motor SQLAlchemy seguro para MySQL 8 usando mysql-connector-python."""
-    cfg = _config()
-    url_conexion = URL.create(
-        drivername="mysql+mysqlconnector",
-        username=cfg["user"],
-        password=cfg["password"],
-        host=cfg["host"],
-        port=int(cfg["port"]),
-        database=cfg["database"],
-    )
-    return create_engine(url_conexion, pool_pre_ping=True)
+def _fila_ocurrencia(occ: Ocurrencia) -> dict[str, Any]:
+    """Traduce una entidad ORM a los alias Darwin Core que usan los cuadernos."""
+    media: list[Any] = []
+    if isinstance(occ.raw_json, dict):
+        bruto = occ.raw_json.get("media") or []
+        if isinstance(bruto, list):
+            media = bruto
+
+    return {
+        "key": occ.occurrence_key,
+        "taxonKey": occ.taxon_key,
+        "scientificName": occ.scientific_name,
+        "acceptedScientificName": occ.accepted_scientific_name,
+        "taxonRank": occ.taxon_rank,
+        "specificEpithet": occ.specific_epithet,
+        "infraspecificEpithet": occ.infraspecific_epithet,
+        "countryCode": occ.country_code,
+        "stateProvince": occ.state_province,
+        "comunidad_gadm": occ.comunidad_gadm,
+        "provincia_gadm": occ.provincia_gadm,
+        "municipio_gadm": occ.municipio_gadm,
+        "locality": occ.locality,
+        "decimalLatitude": _numero(occ.decimal_latitude),
+        "decimalLongitude": _numero(occ.decimal_longitude),
+        "coordinateUncertaintyInMeters": _numero(occ.coordinate_uncertainty_m),
+        "eventDate": occ.event_date,
+        "year": occ.year,
+        "month": occ.month,
+        "day": occ.day,
+        "basisOfRecord": occ.basis_of_record,
+        "occurrenceStatus": occ.occurrence_status,
+        "vitality": occ.vitality,
+        "individualCount": occ.individual_count,
+        "sex": occ.sex,
+        "lifeStage": occ.life_stage,
+        "recordedBy": occ.recorded_by,
+        "identifiedBy": occ.identified_by,
+        "catalogNumber": occ.catalog_number,
+        "institutionCode": occ.institution_code,
+        "license": occ.license,
+        "gbif_url": occ.gbif_url,
+        "dataset_title": occ.dataset.title if occ.dataset else None,
+        "dataset_type": occ.dataset.dataset_type if occ.dataset else None,
+        "publishing_org_title": occ.organizacion.title if occ.organizacion else None,
+        "org_country": occ.organizacion.country if occ.organizacion else None,
+        "url_imagen": occ.url_primera_imagen,
+        "num_media": len(media),
+    }
 
 
-@contextmanager
-def obtener_engine():
-    """Gestor de contexto que abre y libera el motor automáticamente."""
-    engine = crear_engine_gbif()
-    try:
-        yield engine
-    finally:
-        engine.dispose()
+def obtener_resumen_general() -> pd.DataFrame:
+    """Devuelve el conteo total de registros almacenados en las 4 tablas vía ORM."""
+    with get_session() as session:
+        conteos = BiodiversidadRepository(session).resumen_conteo_tablas()
 
-
-def _clausula_especie(especie: str | None, alias: str = "") -> tuple[str, dict]:
-    nombre = (especie or "").strip()
-    if not nombre:
-        return "1 = 1", {}
-    prefijo = f"{alias}." if alias else ""
-    sql = (
-        f"({prefijo}scientific_name = :especie OR {prefijo}scientific_name LIKE :especie_como "
-        f"OR {prefijo}accepted_scientific_name = :especie "
-        f"OR {prefijo}accepted_scientific_name LIKE :especie_como)"
-    )
-    return sql, {"especie": nombre, "especie_como": f"{nombre}%"}
-
-
-def _marcar_especie(df: pd.DataFrame, especie: str | None) -> pd.DataFrame:
-    nombre = (especie or "").strip()
-    if not nombre:
-        return df
-    salida = df.copy()
-    if "especie" in salida.columns:
-        salida = salida.drop(columns=["especie"])
-    salida.insert(0, "especie", nombre)
-    return salida
-
-
-def obtener_resumen_general(especie: str | None = None) -> pd.DataFrame:
-    """Devuelve el conteo de la especie indicada, o el de las cuatro tablas si no hay especie."""
-    clausula, params = _clausula_especie(especie)
-    if not params:
-        sql = """
-            SELECT 'taxones' AS tabla, COUNT(*) AS total FROM taxones
-            UNION ALL
-            SELECT 'organizaciones', COUNT(*) FROM organizaciones
-            UNION ALL
-            SELECT 'datasets', COUNT(*) FROM datasets
-            UNION ALL
-            SELECT 'ocurrencias', COUNT(*) FROM ocurrencias
-        """
-        consulta = text(sql)
-    else:
-        sql = f"""
-            SELECT 'taxones' AS tabla, COUNT(*) AS total FROM taxones
-            WHERE scientific_name = :especie OR scientific_name LIKE :especie_como
-               OR canonical_name = :especie OR canonical_name LIKE :especie_como
-            UNION ALL
-            SELECT 'organizaciones', COUNT(DISTINCT organization_key) FROM ocurrencias
-            WHERE {clausula}
-            UNION ALL
-            SELECT 'datasets', COUNT(DISTINCT dataset_key) FROM ocurrencias
-            WHERE {clausula}
-            UNION ALL
-            SELECT 'ocurrencias', COUNT(*) FROM ocurrencias
-            WHERE {clausula}
-        """
-        consulta = text(sql)
-    with obtener_engine() as engine:
-        return _marcar_especie(pd.read_sql(consulta, engine, params=params), especie)
+    return pd.DataFrame([{"tabla": tabla, "total": total} for tabla, total in conteos.items()])
 
 
 def cargar_ocurrencias(
-    paises: tuple[str, ...] | list[str] = ("ES", "PT"),
+    paises: Sequence[str] = ("ES", "PT"),
     solo_lobo_silvestre: bool = False,
     anio_min: int | None = None,
-    especie: str | None = None,
+    taxon_key: int | None = None,
 ) -> pd.DataFrame:
     """
-    Carga ocurrencias enriquecidas con el título del dataset, la organización
-    publicadora y los metadatos multimedia extraídos de raw_json.
-    Mantiene los nombres de columna Darwin Core del cuaderno.
+    Carga ocurrencias con dataset y organización publicadora mediante la sesión ORM.
+    Mantiene los nombres de columna Darwin Core de los cuadernos, más url_imagen y num_media.
     """
-    filtros = ["o.country_code IN :paises"]
-    params: dict = {"paises": list(paises)}
-    clausula, extra = _clausula_especie(especie, "o")
-    if extra:
-        filtros.append(clausula)
-        params.update(extra)
+    with get_session() as session:
+        ocurrencias = BiodiversidadRepository(session).buscar_ocurrencias(
+            paises=paises,
+            solo_lobo_silvestre=solo_lobo_silvestre,
+            anio_min=anio_min,
+            taxon_key=taxon_key,
+        )
+        filas = [_fila_ocurrencia(occ) for occ in ocurrencias]
 
-    if solo_lobo_silvestre:
-        # Excluye Canis lupus familiaris (perro doméstico)
-        filtros.append("o.specific_epithet = 'lupus'")
-        filtros.append("(o.infraspecific_epithet IS NULL OR o.infraspecific_epithet <> 'familiaris')")
-
-    if anio_min is not None:
-        filtros.append("o.year >= :anio_min")
-        params["anio_min"] = anio_min
-
-    where_clause = " AND ".join(filtros)
-
-    sql = f"""
-        SELECT
-            o.occurrence_key AS `key`,
-            o.taxon_key AS taxonKey,
-            o.scientific_name AS scientificName,
-            o.accepted_scientific_name AS acceptedScientificName,
-            o.taxon_rank AS taxonRank,
-            o.specific_epithet AS specificEpithet,
-            o.infraspecific_epithet AS infraspecificEpithet,
-            o.country_code AS countryCode,
-            o.state_province AS stateProvince,
-            o.comunidad_gadm,
-            o.provincia_gadm,
-            o.municipio_gadm,
-            o.locality,
-            o.decimal_latitude AS decimalLatitude,
-            o.decimal_longitude AS decimalLongitude,
-            o.coordinate_uncertainty_m AS coordinateUncertaintyInMeters,
-            o.event_date AS eventDate,
-            o.year,
-            o.month,
-            o.day,
-            o.basis_of_record AS basisOfRecord,
-            o.occurrence_status AS occurrenceStatus,
-            o.vitality,
-            o.individual_count AS individualCount,
-            o.sex,
-            o.life_stage AS lifeStage,
-            o.recorded_by AS recordedBy,
-            o.identified_by AS identifiedBy,
-            o.catalog_number AS catalogNumber,
-            o.institution_code AS institutionCode,
-            o.license,
-            o.gbif_url,
-            JSON_UNQUOTE(JSON_EXTRACT(o.raw_json, '$.media[0].identifier')) AS url_imagen,
-            COALESCE(JSON_LENGTH(JSON_EXTRACT(o.raw_json, '$.media')), 0) AS num_media,
-            d.title AS dataset_title,
-            d.dataset_type,
-            org.title AS publishing_org_title,
-            org.country AS org_country
-        FROM ocurrencias o
-        LEFT JOIN datasets d ON o.dataset_key = d.dataset_key
-        LEFT JOIN organizaciones org ON o.organization_key = org.organization_key
-        WHERE {where_clause}
-        ORDER BY o.year DESC, o.occurrence_key DESC
-    """
-
-    stmt = text(sql).bindparams(bindparam("paises", expanding=True))
-
-    with obtener_engine() as engine:
-        return _marcar_especie(pd.read_sql(stmt, engine, params=params), especie)
+    df = pd.DataFrame(filas)
+    for col in ("decimalLatitude", "decimalLongitude", "coordinateUncertaintyInMeters"):
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors="coerce")
+    return df
 
 
-def resumen_territorial_por_comunidad(pais: str = "ES", especie: str | None = None) -> pd.DataFrame:
+def resumen_territorial_por_comunidad(pais: str = "ES") -> pd.DataFrame:
     """Agrupa ocurrencias por comunidad autónoma / región GADM y tipo de evidencia."""
-    clausula, extra = _clausula_especie(especie)
-    sql = f"""
-        SELECT
-            COALESCE(comunidad_gadm, state_province, 'Sin asignar') AS region,
-            basis_of_record AS tipo_evidencia,
-            COUNT(*) AS total_registros,
-            MIN(year) AS desde_anio,
-            MAX(year) AS hasta_anio
-        FROM ocurrencias
-        WHERE country_code = :pais AND {clausula}
-        GROUP BY region, basis_of_record
-        ORDER BY total_registros DESC
-    """
-    with obtener_engine() as engine:
-        df = pd.read_sql(text(sql), engine, params={"pais": pais, **extra})
-    return _marcar_especie(df, especie)
+    with get_session() as session:
+        filas = BiodiversidadRepository(session).resumen_territorial(pais=pais)
+
+    return pd.DataFrame(
+        filas,
+        columns=["region", "tipo_evidencia", "total_registros", "desde_anio", "hasta_anio"],
+    )
 
 
-def top_datasets_publicadores(limite: int = 10, especie: str | None = None) -> pd.DataFrame:
+def top_datasets_publicadores(limite: int = 10) -> pd.DataFrame:
     """Devuelve los datasets con mayor volumen de registros cargados y su organización."""
-    clausula, extra = _clausula_especie(especie, "o")
-    sql = f"""
-        SELECT
-            d.title AS dataset,
-            org.title AS organizacion,
-            org.country AS pais_org,
-            d.license AS licencia,
-            COUNT(o.occurrence_key) AS registros_en_bd
-        FROM ocurrencias o
-        JOIN datasets d ON o.dataset_key = d.dataset_key
-        LEFT JOIN organizaciones org ON d.organization_key = org.organization_key
-        WHERE {clausula}
-        GROUP BY d.dataset_key, d.title, org.title, org.country, d.license
-        ORDER BY registros_en_bd DESC
-        LIMIT :limite
-    """
-    with obtener_engine() as engine:
-        df = pd.read_sql(text(sql), engine, params={"limite": limite, **extra})
-    return _marcar_especie(df, especie)
+    with get_session() as session:
+        filas = BiodiversidadRepository(session).top_datasets_publicadores(limite=limite)
+
+    return pd.DataFrame(
+        filas,
+        columns=["dataset", "organizacion", "pais_org", "licencia", "registros_en_bd"],
+    )
 
 
-def consultar_campos_raw_json(limite: int = 15, especie: str | None = None) -> pd.DataFrame:
+def consultar_campos_raw_json(limite: int = 15) -> pd.DataFrame:
     """
-    Demuestra cómo consultar atributos almacenados dentro de la columna raw_json
-    de MySQL 8 (por ejemplo, multimedia, habitat o comportamiento) sin modificar el esquema.
+    Lee hábitat, comentarios y la primera foto desde la entidad ORM
+    (propiedades sobre raw_json), sin una conexión SQL suelta.
     """
-    clausula, extra = _clausula_especie(especie)
-    sql = f"""
-        SELECT
-            occurrence_key,
-            country_code,
-            year,
-            scientific_name,
-            JSON_UNQUOTE(JSON_EXTRACT(raw_json, '$.habitat')) AS habitat_json,
-            JSON_UNQUOTE(JSON_EXTRACT(raw_json, '$.eventRemarks')) AS comentarios_evento,
-            JSON_LENGTH(JSON_EXTRACT(raw_json, '$.media')) AS num_archivos_media,
-            JSON_UNQUOTE(JSON_EXTRACT(raw_json, '$.media[0].identifier')) AS url_primera_foto,
-            gbif_url
-        FROM ocurrencias
-        WHERE ({clausula})
-          AND (
-            JSON_LENGTH(JSON_EXTRACT(raw_json, '$.media')) > 0
-            OR JSON_EXTRACT(raw_json, '$.habitat') IS NOT NULL
-          )
-        LIMIT :limite
-    """
-    with obtener_engine() as engine:
-        df = pd.read_sql(text(sql), engine, params={"limite": limite, **extra})
-    return _marcar_especie(df, especie)
+    with get_session() as session:
+        ocurrencias = BiodiversidadRepository(session).muestras_con_media_o_habitat(limite=limite)
+        filas = []
+        for occ in ocurrencias:
+            bruto = occ.raw_json if isinstance(occ.raw_json, dict) else {}
+            media = bruto.get("media") or []
+            filas.append(
+                {
+                    "occurrence_key": occ.occurrence_key,
+                    "country_code": occ.country_code,
+                    "year": occ.year,
+                    "scientific_name": occ.scientific_name,
+                    "habitat_json": occ.habitat_json,
+                    "comentarios_evento": bruto.get("eventRemarks"),
+                    "num_archivos_media": len(media) if isinstance(media, list) else None,
+                    "url_primera_foto": occ.url_primera_imagen,
+                    "gbif_url": occ.gbif_url,
+                }
+            )
+
+    return pd.DataFrame(filas)
