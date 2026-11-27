@@ -45,7 +45,7 @@ Fuera del alcance:
 | RF-01 | El sistema resuelve un nombre científico con `GET /v1/species/match` y usa `usageKey` como `taxonKey`. No se escribe el identificador a mano. |
 | RF-02 | La descarga de ocurrencias usa `GET /v1/occurrence/search`, pagina con `limit` máximo 300 y se detiene con `endOfRecords` o con el máximo configurado. |
 | RF-03 | La sesión HTTP reintenta 429 y errores 5xx. En la red de la Junta, la verificación TLS usa el almacén de Windows (`truststore`) porque el proxy Netskope sustituye el certificado. |
-| RF-04 | Se puede limitar por país (`ES`, `PT` u otros códigos ISO), rango de años y presencia de coordenadas. |
+| RF-04 | Se puede limitar por uno o varios países (código ISO de dos letras, no solo `ES` y `PT`), por un año, por un intervalo de años o por un intervalo de fechas (`2018-03-01`), y por presencia de coordenadas. En la ventana, Hasta vacío llega hasta hoy. |
 | RF-05 | De cada registro se conservan los campos Darwin Core usados en el análisis y, en el pipeline de `src/`, el JSON íntegro en `raw_json`. |
 | RF-06 | Si el taxón es *Canis lupus*, el sistema puede quedarse solo con `specificEpithet = lupus` y excluir el epíteto infraespecífico `familiaris`. |
 | RF-07 | El territorio de análisis preferente es `gadm` (comunidad, provincia, municipio). `stateProvince` se conserva porque no siempre equivale a una comunidad autónoma. |

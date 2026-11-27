@@ -181,6 +181,7 @@ classDiagram
     +upsert_ocurrencias()
     +buscar_ocurrencias()
     +contar_ocurrencias()
+    +listar_paises()
     +resumen_conteo_tablas()
     +resumen_territorial()
     +top_datasets_publicadores()

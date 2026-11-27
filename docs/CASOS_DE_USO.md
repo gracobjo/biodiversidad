@@ -104,7 +104,7 @@ Actores: persona investigadora, persona analista, persona ingeniera de datos. La
 
 1. Aplica `docs/schema_gbif.sql`.
 2. Ejecuta `notebooks/ingesta_gbif_mysql.ipynb`, la pestaña Traer datos de GBIF de `python app_tkinter.py`, o en `interfaz_gbif.py` elige MySQL y pulsa Crear y Poblar. Las tres vías terminan en el repositorio ORM.
-3. Ejecuta `notebooks/analisis_offline_gbif.ipynb`, la pestaña Consultar de `app_tkinter.py` o las consultas de `interfaz_gbif.py`.
+3. Ejecuta `notebooks/analisis_offline_gbif.ipynb`, la pestaña Consultar de `app_tkinter.py` o las consultas de `interfaz_gbif.py`. En Consultar se puede elegir cualquier país ya guardado, un año concreto o un intervalo de fechas.
 
 **Excepción.** Si la conexión es rechazada, no se escribe nada. SQLite sigue siendo utilizable.
 

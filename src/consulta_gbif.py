@@ -74,14 +74,19 @@ def obtener_resumen_general() -> pd.DataFrame:
 
 
 def cargar_ocurrencias(
-    paises: Sequence[str] = ("ES", "PT"),
+    paises: Sequence[str] | None = ("ES", "PT"),
     solo_lobo_silvestre: bool = False,
     anio_min: int | None = None,
     taxon_key: int | None = None,
+    anio_max: int | None = None,
+    fecha_desde=None,
+    fecha_hasta=None,
 ) -> pd.DataFrame:
     """
     Carga ocurrencias con dataset y organización publicadora mediante la sesión ORM.
     Mantiene los nombres de columna Darwin Core de los cuadernos, más url_imagen y num_media.
+    paises vacío o None no filtra por país. anio_max cierra el intervalo de años.
+    fecha_desde y fecha_hasta son datetime.date y afinan por mes y día.
     """
     with get_session() as session:
         ocurrencias = BiodiversidadRepository(session).buscar_ocurrencias(
@@ -89,6 +94,9 @@ def cargar_ocurrencias(
             solo_lobo_silvestre=solo_lobo_silvestre,
             anio_min=anio_min,
             taxon_key=taxon_key,
+            anio_max=anio_max,
+            fecha_desde=fecha_desde,
+            fecha_hasta=fecha_hasta,
         )
         filas = [_fila_ocurrencia(occ) for occ in ocurrencias]
 

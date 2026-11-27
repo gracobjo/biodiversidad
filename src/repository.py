@@ -1,10 +1,38 @@
 from typing import Any, Sequence
 
-from sqlalchemy import func, or_, select
+from datetime import date
+
+from sqlalchemy import and_, func, or_, select
 from sqlalchemy.dialects.mysql import insert as mysql_insert
 from sqlalchemy.orm import Session, defer, joinedload
 
 from models import Dataset, Ocurrencia, Organizacion, Taxon
+
+
+def _desde_fecha(cota: date):
+    """Incluye el día indicado. Un registro sin mes o día solo entra si su año es posterior."""
+    return or_(
+        Ocurrencia.year > cota.year,
+        and_(Ocurrencia.year == cota.year, Ocurrencia.month > cota.month),
+        and_(
+            Ocurrencia.year == cota.year,
+            Ocurrencia.month == cota.month,
+            Ocurrencia.day >= cota.day,
+        ),
+    )
+
+
+def _hasta_fecha(cota: date):
+    """Incluye el día indicado. Un registro sin mes o día solo entra si su año es anterior."""
+    return or_(
+        Ocurrencia.year < cota.year,
+        and_(Ocurrencia.year == cota.year, Ocurrencia.month < cota.month),
+        and_(
+            Ocurrencia.year == cota.year,
+            Ocurrencia.month == cota.month,
+            Ocurrencia.day <= cota.day,
+        ),
+    )
 
 
 class BiodiversidadRepository:
@@ -214,13 +242,18 @@ class BiodiversidadRepository:
     # ------------------------------------------------------------------
     def _filtros_ocurrencias(
         self,
-        paises: Sequence[str],
+        paises: Sequence[str] | None,
         solo_lobo_silvestre: bool,
         anio_min: int | None,
         comunidad: str | None,
         taxon_key: int | None,
+        anio_max: int | None = None,
+        fecha_desde: date | None = None,
+        fecha_hasta: date | None = None,
     ) -> list[Any]:
-        filtros: list[Any] = [Ocurrencia.country_code.in_(list(paises))]
+        filtros: list[Any] = []
+        if paises:
+            filtros.append(Ocurrencia.country_code.in_(list(paises)))
         if taxon_key is not None:
             filtros.append(Ocurrencia.taxon_key == taxon_key)
         if solo_lobo_silvestre:
@@ -231,38 +264,59 @@ class BiodiversidadRepository:
                     Ocurrencia.infraspecific_epithet != "familiaris",
                 )
             )
-        if anio_min is not None:
-            filtros.append(Ocurrencia.year >= anio_min)
+        if fecha_desde is not None or fecha_hasta is not None:
+            if fecha_desde is not None:
+                filtros.append(_desde_fecha(fecha_desde))
+            if fecha_hasta is not None:
+                filtros.append(_hasta_fecha(fecha_hasta))
+        else:
+            if anio_min is not None:
+                filtros.append(Ocurrencia.year >= anio_min)
+            if anio_max is not None:
+                filtros.append(Ocurrencia.year <= anio_max)
         if comunidad:
             filtros.append(Ocurrencia.comunidad_gadm == comunidad)
         return filtros
 
     def contar_ocurrencias(
         self,
-        paises: Sequence[str] = ("ES", "PT"),
+        paises: Sequence[str] | None = ("ES", "PT"),
         solo_lobo_silvestre: bool = True,
         anio_min: int | None = None,
         comunidad: str | None = None,
         taxon_key: int | None = None,
+        anio_max: int | None = None,
+        fecha_desde: date | None = None,
+        fecha_hasta: date | None = None,
     ) -> int:
         """Cuenta las filas del mismo filtro que buscar_ocurrencias, sin el límite de pantalla."""
-        filtros = self._filtros_ocurrencias(paises, solo_lobo_silvestre, anio_min, comunidad, taxon_key)
-        return self.session.scalar(select(func.count()).select_from(Ocurrencia).where(*filtros)) or 0
+        filtros = self._filtros_ocurrencias(
+            paises, solo_lobo_silvestre, anio_min, comunidad, taxon_key, anio_max, fecha_desde, fecha_hasta
+        )
+        consulta = select(func.count()).select_from(Ocurrencia)
+        if filtros:
+            consulta = consulta.where(*filtros)
+        return self.session.scalar(consulta) or 0
 
     def buscar_ocurrencias(
         self,
-        paises: Sequence[str] = ("ES", "PT"),
+        paises: Sequence[str] | None = ("ES", "PT"),
         solo_lobo_silvestre: bool = True,
         anio_min: int | None = None,
         comunidad: str | None = None,
         taxon_key: int | None = None,
         limite: int | None = None,
+        anio_max: int | None = None,
+        fecha_desde: date | None = None,
+        fecha_hasta: date | None = None,
     ) -> Sequence[Ocurrencia]:
         """
         Ordena solo las claves. MySQL falla con el error 1038 si el ORDER BY
         incluye raw_json, porque el buffer de ordenación no cabe con ese JSON.
         """
-        filtros = self._filtros_ocurrencias(paises, solo_lobo_silvestre, anio_min, comunidad, taxon_key)
+        filtros = self._filtros_ocurrencias(
+            paises, solo_lobo_silvestre, anio_min, comunidad, taxon_key, anio_max, fecha_desde, fecha_hasta
+        )
         if comunidad:
             orden = (
                 Ocurrencia.provincia_gadm.is_(None),
@@ -273,7 +327,10 @@ class BiodiversidadRepository:
         else:
             orden = (Ocurrencia.year.desc(), Ocurrencia.occurrence_key.desc())
 
-        claves_stmt = select(Ocurrencia.occurrence_key).where(*filtros).order_by(*orden)
+        claves_stmt = select(Ocurrencia.occurrence_key)
+        if filtros:
+            claves_stmt = claves_stmt.where(*filtros)
+        claves_stmt = claves_stmt.order_by(*orden)
         if limite:
             claves_stmt = claves_stmt.limit(limite)
 
@@ -328,14 +385,25 @@ class BiodiversidadRepository:
         stmt = select(Taxon.taxon_key, Taxon.scientific_name).order_by(Taxon.scientific_name)
         return [(r.taxon_key, r.scientific_name) for r in self.session.execute(stmt).all()]
 
-    def listar_comunidades(self, paises: Sequence[str] = ("ES", "PT")) -> list[str]:
+    def listar_paises(self) -> list[str]:
+        stmt = (
+            select(Ocurrencia.country_code)
+            .where(Ocurrencia.country_code.is_not(None), Ocurrencia.country_code != "")
+            .distinct()
+            .order_by(Ocurrencia.country_code)
+        )
+        return list(self.session.scalars(stmt).all())
+
+    def listar_comunidades(self, paises: Sequence[str] | None = ("ES", "PT")) -> list[str]:
+        condiciones: list[Any] = [
+            Ocurrencia.comunidad_gadm.is_not(None),
+            Ocurrencia.comunidad_gadm != "",
+        ]
+        if paises:
+            condiciones.append(Ocurrencia.country_code.in_(list(paises)))
         stmt = (
             select(Ocurrencia.comunidad_gadm)
-            .where(
-                Ocurrencia.country_code.in_(paises),
-                Ocurrencia.comunidad_gadm.is_not(None),
-                Ocurrencia.comunidad_gadm != "",
-            )
+            .where(*condiciones)
             .distinct()
             .order_by(Ocurrencia.comunidad_gadm)
         )

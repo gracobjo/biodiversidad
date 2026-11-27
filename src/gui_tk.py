@@ -4,6 +4,7 @@ import threading
 import time
 import tkinter as tk
 import webbrowser
+from datetime import date
 from pathlib import Path
 from tkinter import messagebox, ttk
 from typing import Any
@@ -52,6 +53,7 @@ class BiodiversidadApp(tk.Tk):
         self._ocurrencias: list[Ocurrencia] = []
         self._total_filtro = 0
         self._mapa_taxones: dict[str, int] = {}
+        self._paises_en_bd: set[str] = set()
         self._orden_col = "anio"
         self._orden_desc = True
 
@@ -94,19 +96,30 @@ class BiodiversidadApp(tk.Tk):
         ttk.Label(filtros, text="País:").grid(row=0, column=2, padx=(0, 4), pady=(0, 6), sticky="w")
         self.var_pais = tk.StringVar(value="ES + PT")
         self.cb_pais = ttk.Combobox(
-            filtros, textvariable=self.var_pais, values=("ES + PT", "ES", "PT"), state="readonly", width=10
+            filtros,
+            textvariable=self.var_pais,
+            values=("Todos", "ES + PT", "ES", "PT"),
+            width=16,
         )
         self.cb_pais.grid(row=0, column=3, padx=(0, 12), pady=(0, 6), sticky="w")
-        self.cb_pais.bind("<<ComboboxSelected>>", lambda _e: self._actualizar_lista_comunidades())
+        self.cb_pais.bind("<<ComboboxSelected>>", self._al_cambiar_pais)
+        self.cb_pais.bind("<FocusOut>", self._al_cambiar_pais)
+        self.cb_pais.bind("<Return>", lambda _e: self.ejecutar_consulta())
 
-        ttk.Label(filtros, text="Desde el año:").grid(row=0, column=4, padx=(0, 4), pady=(0, 6), sticky="w")
-        self.var_anio_min = tk.StringVar(value="2020")
-        entrada_anio = ttk.Entry(filtros, textvariable=self.var_anio_min, width=8)
-        entrada_anio.grid(row=0, column=5, padx=(0, 12), pady=(0, 6), sticky="w")
-        entrada_anio.bind("<Return>", lambda _e: self.ejecutar_consulta())
+        ttk.Label(filtros, text="Desde:").grid(row=0, column=4, padx=(0, 4), pady=(0, 6), sticky="w")
+        self.var_desde = tk.StringVar(value="2020")
+        entrada_desde = ttk.Entry(filtros, textvariable=self.var_desde, width=12)
+        entrada_desde.grid(row=0, column=5, padx=(0, 8), pady=(0, 6), sticky="w")
+        entrada_desde.bind("<Return>", lambda _e: self.ejecutar_consulta())
+
+        ttk.Label(filtros, text="Hasta:").grid(row=0, column=6, padx=(0, 4), pady=(0, 6), sticky="w")
+        self.var_hasta = tk.StringVar(value="")
+        entrada_hasta = ttk.Entry(filtros, textvariable=self.var_hasta, width=12)
+        entrada_hasta.grid(row=0, column=7, padx=(0, 12), pady=(0, 6), sticky="w")
+        entrada_hasta.bind("<Return>", lambda _e: self.ejecutar_consulta())
 
         ttk.Button(filtros, text="Consultar", command=self.ejecutar_consulta).grid(
-            row=0, column=6, padx=(0, 6), pady=(0, 6), sticky="ew"
+            row=0, column=8, padx=(0, 6), pady=(0, 6), sticky="ew"
         )
 
         ttk.Label(filtros, text="Comunidad:").grid(row=1, column=0, padx=(0, 4), sticky="w")
@@ -132,7 +145,7 @@ class BiodiversidadApp(tk.Tk):
         ttk.Entry(filtros, textvariable=self.var_texto, width=18).grid(row=1, column=5, padx=(0, 12), sticky="w")
 
         ttk.Button(filtros, text="Resumen por comunidad", command=self.mostrar_resumen_territorial).grid(
-            row=1, column=6, padx=(0, 6), sticky="ew"
+            row=1, column=6, columnspan=3, padx=(0, 6), sticky="ew"
         )
 
         self.var_solo_lobo = tk.BooleanVar(value=False)
@@ -141,7 +154,11 @@ class BiodiversidadApp(tk.Tk):
             text="Excluir perro doméstico (dejar solo lobo)",
             variable=self.var_solo_lobo,
         )
-        self.chk_lobo.grid(row=2, column=0, columnspan=5, sticky="w", pady=(8, 0))
+        self.chk_lobo.grid(row=2, column=0, columnspan=4, sticky="w", pady=(8, 0))
+        ttk.Label(
+            filtros,
+            text="País: FR o ES, PT. Fecha: 2018, o 2018-03-01. El mismo valor en Desde y Hasta acota ese año o ese día. Hasta vacío llega hasta hoy.",
+        ).grid(row=2, column=4, columnspan=5, sticky="w", pady=(8, 0))
 
         panel = ttk.Panedwindow(self.tab_consultar, orient="horizontal")
         panel.pack(fill="both", expand=True)
@@ -163,7 +180,7 @@ class BiodiversidadApp(tk.Tk):
         encabezados = {
             "key": ("GBIF ID", 90),
             "pais": ("País", 46),
-            "anio": ("Año", 52),
+            "anio": ("Fecha", 88),
             "especie": ("Nombre científico", 170),
             "comunidad": ("Comunidad", 140),
             "provincia": ("Provincia", 120),
@@ -221,20 +238,28 @@ class BiodiversidadApp(tk.Tk):
 
         ttk.Label(params, text="Países:").grid(row=0, column=2, padx=(0, 4), sticky="w")
         self.var_paises_ing = tk.StringVar(value="ES,PT")
-        ttk.Entry(params, textvariable=self.var_paises_ing, width=12).grid(row=0, column=3, padx=(0, 12))
+        ttk.Entry(params, textvariable=self.var_paises_ing, width=18).grid(row=0, column=3, padx=(0, 12))
 
-        ttk.Label(params, text="Años:").grid(row=0, column=4, padx=(0, 4), sticky="w")
-        self.var_anios_ing = tk.StringVar(value="2020,2026")
-        ttk.Entry(params, textvariable=self.var_anios_ing, width=12).grid(row=0, column=5, padx=(0, 12))
+        ttk.Label(params, text="Desde:").grid(row=0, column=4, padx=(0, 4), sticky="w")
+        self.var_desde_ing = tk.StringVar(value="2020")
+        ttk.Entry(params, textvariable=self.var_desde_ing, width=12).grid(row=0, column=5, padx=(0, 8))
 
-        ttk.Label(params, text="Máximo por país:").grid(row=0, column=6, padx=(0, 4), sticky="w")
+        ttk.Label(params, text="Hasta:").grid(row=0, column=6, padx=(0, 4), sticky="w")
+        self.var_hasta_ing = tk.StringVar(value="")
+        ttk.Entry(params, textvariable=self.var_hasta_ing, width=12).grid(row=0, column=7, padx=(0, 12))
+
+        ttk.Label(params, text="Máximo por país:").grid(row=1, column=0, padx=(0, 4), pady=(8, 0), sticky="w")
         self.var_max_ing = tk.StringVar(value="300")
-        ttk.Entry(params, textvariable=self.var_max_ing, width=8).grid(row=0, column=7, padx=(0, 12))
+        ttk.Entry(params, textvariable=self.var_max_ing, width=8).grid(row=1, column=1, padx=(0, 12), pady=(8, 0), sticky="w")
 
         self.btn_descargar = ttk.Button(params, text="Descargar de GBIF", command=self.iniciar_descarga)
-        self.btn_descargar.grid(row=0, column=8, padx=(0, 6))
+        self.btn_descargar.grid(row=1, column=2, columnspan=2, padx=(0, 6), pady=(8, 0), sticky="w")
         self.btn_cancelar = ttk.Button(params, text="Cancelar", command=self._cancelar.set, state="disabled")
-        self.btn_cancelar.grid(row=0, column=9)
+        self.btn_cancelar.grid(row=1, column=4, pady=(8, 0), sticky="w")
+        ttk.Label(
+            params,
+            text="Cualquier código ISO (FR, IT, MA). Fechas como en Consultar: 2018 o 2018-03-01.",
+        ).grid(row=1, column=5, columnspan=4, padx=(8, 0), pady=(8, 0), sticky="w")
 
         progreso = ttk.Frame(self.tab_descarga)
         progreso.pack(fill="x", pady=(0, 8))
@@ -256,9 +281,89 @@ class BiodiversidadApp(tk.Tk):
         if self._bd_ok:
             self.ejecutar_consulta()
 
-    def _paises_seleccionados(self) -> tuple[str, ...]:
-        seleccion = self.var_pais.get()
-        return ("ES", "PT") if seleccion == "ES + PT" else (seleccion,)
+    def _paises_seleccionados(self) -> tuple[str, ...] | None:
+        texto = self.var_pais.get().strip()
+        if not texto or texto.casefold() == "todos":
+            return None
+        compacto = texto.upper().replace(" ", "")
+        if compacto in {"ES+PT", "ES,PT", "PT,ES"}:
+            return ("ES", "PT")
+        codigos: list[str] = []
+        for parte in texto.replace(";", ",").replace("+", ",").split(","):
+            codigo = parte.strip().upper()
+            if not codigo:
+                continue
+            if len(codigo) != 2 or not codigo.isalpha():
+                raise ValueError(
+                    f"«{parte.strip()}» no es un código de país de dos letras. "
+                    "Ejemplos: FR, o ES, PT. Todos deja el país sin filtrar."
+                )
+            codigos.append(codigo)
+        return tuple(dict.fromkeys(codigos)) or None
+
+    def _al_cambiar_pais(self, _evento=None) -> None:
+        try:
+            self._paises_seleccionados()
+        except ValueError:
+            return
+        try:
+            self._actualizar_lista_comunidades()
+        except Exception:
+            return
+
+    def _leer_cota(self, texto: str, etiqueta: str) -> tuple[date, bool] | None:
+        """Devuelve la fecha y si el usuario escribió solo un año."""
+        texto = texto.strip()
+        if not texto:
+            return None
+        if len(texto) == 4 and texto.isdigit():
+            anio = int(texto)
+            if not 1500 <= anio <= 2100:
+                raise ValueError(f"{etiqueta} tiene que estar entre 1500 y 2100.")
+            return date(anio, 1, 1), True
+        if len(texto) == 10 and texto[4] == "-" and texto[7] == "-":
+            try:
+                return date.fromisoformat(texto), False
+            except ValueError:
+                pass
+        raise ValueError(f"{etiqueta}: escribe un año (2018) o una fecha (2018-03-01).")
+
+    def _intervalo(self, var_desde: tk.StringVar, var_hasta: tk.StringVar) -> dict[str, Any]:
+        desde = self._leer_cota(var_desde.get(), "Desde")
+        hasta = self._leer_cota(var_hasta.get(), "Hasta")
+        if desde and hasta:
+            inicio = desde[0] if not desde[1] else date(desde[0].year, 1, 1)
+            fin = hasta[0] if not hasta[1] else date(hasta[0].year, 12, 31)
+            if inicio > fin:
+                raise ValueError("Desde es posterior a Hasta.")
+        solo_anios = (desde is None or desde[1]) and (hasta is None or hasta[1])
+        if solo_anios:
+            return {
+                "anio_min": desde[0].year if desde else None,
+                "anio_max": hasta[0].year if hasta else None,
+                "fecha_desde": None,
+                "fecha_hasta": None,
+            }
+        return {
+            "anio_min": None,
+            "anio_max": None,
+            "fecha_desde": desde[0] if desde and not desde[1] else (date(desde[0].year, 1, 1) if desde else None),
+            "fecha_hasta": hasta[0] if hasta and not hasta[1] else (date(hasta[0].year, 12, 31) if hasta else None),
+        }
+
+    def _filtro_gbif(self, var_desde: tk.StringVar, var_hasta: tk.StringVar) -> dict[str, str]:
+        intervalo = self._intervalo(var_desde, var_hasta)
+        if intervalo["fecha_desde"] or intervalo["fecha_hasta"]:
+            inicio = intervalo["fecha_desde"] or date(1600, 1, 1)
+            fin = intervalo["fecha_hasta"] or date.today()
+            return {"eventDate": f"{inicio.isoformat()},{fin.isoformat()}"}
+        if intervalo["anio_min"] is None and intervalo["anio_max"] is None:
+            return {}
+        inicio = intervalo["anio_min"] if intervalo["anio_min"] is not None else 1600
+        fin = intervalo["anio_max"] if intervalo["anio_max"] is not None else date.today().year
+        if inicio == fin:
+            return {"year": str(inicio)}
+        return {"year": f"{inicio},{fin}"}
 
     def _especie_permite_filtro_lobo(self) -> bool:
         nombre = self.var_especie_filtro.get()
@@ -273,14 +378,6 @@ class BiodiversidadApp(tk.Tk):
             self.chk_lobo.grid()
         else:
             self.chk_lobo.grid_remove()
-
-    def _leer_anio(self) -> int | None:
-        texto = self.var_anio_min.get().strip()
-        if not texto:
-            return None
-        if not texto.isdigit() or not (1500 <= int(texto) <= 2100):
-            raise ValueError("El año tiene que ser un número entre 1500 y 2100, o quedar vacío para no filtrar.")
-        return int(texto)
 
     def _leer_limite(self) -> int:
         texto = self.var_limite.get().strip()
@@ -300,14 +397,17 @@ class BiodiversidadApp(tk.Tk):
         return {
             "paises": self._paises_seleccionados(),
             "solo_lobo_silvestre": solo_lobo,
-            "anio_min": self._leer_anio(),
             "comunidad": comunidad,
             "taxon_key": taxon_key,
             "limite": self._leer_limite(),
+            **self._intervalo(self.var_desde, self.var_hasta),
         }
 
     def _actualizar_lista_comunidades(self, repo_existente: BiodiversidadRepository | None = None) -> None:
-        paises = self._paises_seleccionados()
+        try:
+            paises = self._paises_seleccionados()
+        except ValueError:
+            return
         if repo_existente is not None:
             comunidades = repo_existente.listar_comunidades(paises=paises)
         else:
@@ -324,6 +424,9 @@ class BiodiversidadApp(tk.Tk):
                 repo = BiodiversidadRepository(session)
                 conteos = repo.resumen_conteo_tablas()
                 taxones = repo.listar_taxones()
+                self._paises_en_bd = set(repo.listar_paises())
+                opciones_pais = ["Todos", "ES + PT", *sorted(self._paises_en_bd)]
+                self.cb_pais["values"] = opciones_pais
                 self._actualizar_lista_comunidades(repo_existente=repo)
             self._mapa_taxones = {nombre: clave for clave, nombre in taxones}
             opciones = ["Todas las especies", *self._mapa_taxones.keys()]
@@ -361,6 +464,9 @@ class BiodiversidadApp(tk.Tk):
                     paises=parametros["paises"],
                     solo_lobo_silvestre=parametros["solo_lobo_silvestre"],
                     anio_min=parametros["anio_min"],
+                    anio_max=parametros["anio_max"],
+                    fecha_desde=parametros["fecha_desde"],
+                    fecha_hasta=parametros["fecha_hasta"],
                     comunidad=parametros["comunidad"],
                     taxon_key=parametros["taxon_key"],
                 )
@@ -369,6 +475,9 @@ class BiodiversidadApp(tk.Tk):
                         paises=parametros["paises"],
                         solo_lobo_silvestre=parametros["solo_lobo_silvestre"],
                         anio_min=parametros["anio_min"],
+                        anio_max=parametros["anio_max"],
+                        fecha_desde=parametros["fecha_desde"],
+                        fecha_hasta=parametros["fecha_hasta"],
                         comunidad=parametros["comunidad"],
                         taxon_key=parametros["taxon_key"],
                         limite=parametros["limite"],
@@ -404,7 +513,7 @@ class BiodiversidadApp(tk.Tk):
             valores = {
                 "key": occ.occurrence_key or 0,
                 "pais": occ.country_code or "",
-                "anio": occ.year or 0,
+                "anio": (occ.year or 0) * 10000 + (occ.month or 0) * 100 + (occ.day or 0),
                 "especie": occ.scientific_name or "",
                 "comunidad": occ.comunidad_gadm or "",
                 "provincia": occ.provincia_gadm or "",
@@ -438,7 +547,7 @@ class BiodiversidadApp(tk.Tk):
                 values=(
                     occ.occurrence_key,
                     occ.country_code or "",
-                    occ.year or "",
+                    self._fecha_registro(occ),
                     occ.scientific_name or "",
                     occ.comunidad_gadm or "",
                     occ.provincia_gadm or "",
@@ -459,7 +568,17 @@ class BiodiversidadApp(tk.Tk):
         cargados = len(self._ocurrencias)
         total = self._total_filtro
         if cargados == 0:
-            self.lbl_resultados.config(text=f"0 de {total:,} con estos filtros.")
+            aviso = ""
+            try:
+                paises = self._paises_seleccionados() or ()
+            except ValueError:
+                paises = ()
+            ausentes = [pais for pais in paises if pais not in self._paises_en_bd]
+            if ausentes:
+                aviso = (
+                    f" {', '.join(ausentes)} no está en MySQL: descárgalo en Traer datos de GBIF."
+                )
+            self.lbl_resultados.config(text=f"0 de {total:,} con estos filtros.{aviso}")
             return
         if self.var_texto.get().strip() and visibles != cargados:
             texto = f"{visibles:,} en pantalla · {cargados:,} cargados de {total:,} con estos filtros."
@@ -506,7 +625,7 @@ class BiodiversidadApp(tk.Tk):
         evidencia = EVIDENCIA.get(occ.basis_of_record or "", occ.basis_of_record or "Sin evidencia")
         vitalidad = VITALIDAD.get(occ.vitality or "", occ.vitality or "")
         lineas = [
-            f"{occ.country_code or '—'} · {occ.year or 'año desconocido'}",
+            f"{occ.country_code or '—'} · {self._fecha_registro(occ)}",
             " · ".join(parte for parte in (occ.comunidad_gadm, occ.provincia_gadm) if parte) or "Sin comunidad",
             evidencia + (f" · {vitalidad}" if vitalidad else ""),
             occ.locality or "",
@@ -517,6 +636,15 @@ class BiodiversidadApp(tk.Tk):
         if occ.habitat_json:
             lineas.append(f"Hábitat: {occ.habitat_json}")
         self.lbl_ficha_cuerpo.config(text="\n".join(linea for linea in lineas if linea))
+
+    def _fecha_registro(self, occ: Ocurrencia) -> str:
+        if occ.year and occ.month and occ.day:
+            return f"{occ.year:04d}-{occ.month:02d}-{occ.day:02d}"
+        if occ.year and occ.month:
+            return f"{occ.year:04d}-{occ.month:02d}"
+        if occ.year:
+            return str(occ.year)
+        return "fecha desconocida"
 
     def _avisar_sin_seleccion(self) -> Ocurrencia | None:
         occ = self._ocurrencia_seleccionada()
@@ -656,14 +784,21 @@ class BiodiversidadApp(tk.Tk):
     def iniciar_descarga(self) -> None:
         especie = self.var_especie_ing.get().strip()
         paises = [p.strip().upper() for p in self.var_paises_ing.get().split(",") if p.strip()]
-        anios = self.var_anios_ing.get().strip() or None
+        try:
+            filtro_fecha = self._filtro_gbif(self.var_desde_ing, self.var_hasta_ing)
+        except ValueError as exc:
+            messagebox.showwarning("Revisa las fechas", str(exc))
+            return
         max_txt = self.var_max_ing.get().strip()
         if max_txt and (not max_txt.isdigit() or int(max_txt) < 1):
             messagebox.showwarning("Revisa el máximo", "El máximo por país tiene que ser un número entero, o quedar vacío para traer todo.")
             return
         max_por_pais = int(max_txt) if max_txt else None
         if not especie or not paises:
-            messagebox.showwarning("Faltan datos", "Indica la especie y al menos un código de país, por ejemplo ES,PT.")
+            messagebox.showwarning("Faltan datos", "Indica la especie y al menos un código de país, por ejemplo FR o ES,PT.")
+            return
+        if any(len(pais) != 2 or not pais.isalpha() for pais in paises):
+            messagebox.showwarning("Revisa el país", "Cada país es un código de dos letras: FR, IT, MA, ES.")
             return
         self._cancelar.clear()
         self.btn_descargar.configure(state="disabled")
@@ -674,7 +809,7 @@ class BiodiversidadApp(tk.Tk):
         self._poner_progreso(0, 1, "Resolviendo el nombre en GBIF...")
         hilo = threading.Thread(
             target=self._worker_descarga,
-            args=(especie, paises, anios, max_por_pais),
+            args=(especie, paises, filtro_fecha, max_por_pais),
             daemon=True,
         )
         hilo.start()
@@ -690,7 +825,7 @@ class BiodiversidadApp(tk.Tk):
         self,
         especie: str,
         paises: list[str],
-        anios: str | None,
+        anios: dict[str, str],
         max_por_pais: int | None,
     ) -> None:
         try:
@@ -728,7 +863,7 @@ class BiodiversidadApp(tk.Tk):
                         "offset": offset,
                     }
                     if anios:
-                        params["year"] = anios
+                        params.update(anios)
                     resp = sesion_http.get(f"{GBIF_API}/occurrence/search", params=params, timeout=30)
                     resp.raise_for_status()
                     payload = resp.json()

@@ -102,10 +102,10 @@ Ingesta, idempotente con `INSERT ... ON DUPLICATE KEY UPDATE`:
 Consultas:
 
 * `resumen_conteo_tablas`, `conteo_por_comunidad`, `resumen_territorial`, `top_datasets_publicadores`.
-* `contar_ocurrencias` usa el mismo filtro que `buscar_ocurrencias` y no aplica el límite de la tabla. La ventana lo usa para separar las filas cargadas del total («200 de 3.637», por ejemplo).
+* `contar_ocurrencias` usa el mismo filtro que `buscar_ocurrencias` y no aplica el límite de la tabla. Acepta cualquier país, `anio_max` y, para un día concreto, `fecha_desde` y `fecha_hasta`. Sin países, no filtra por país. La ventana lo usa para separar las filas cargadas del total.
 * `buscar_ocurrencias` ordena solo `occurrence_key` (y año o provincia). Después carga las entidades por lotes de 500, sin `ORDER BY` y sin el `raw_json` de taxón, dataset y organización. Así MySQL no desborda el búfer de ordenación (error 1038) cuando el JSON de la ocurrencia viaja en la fila.
 * `muestras_con_media_o_habitat` selecciona primero las claves que tienen `$.media` o `$.habitat` y reutiliza esa carga por claves.
-* `listar_taxones` y `listar_comunidades` alimentan los filtros de la ventana.
+* `listar_paises`, `listar_taxones` y `listar_comunidades` alimentan los filtros de la ventana. `listar_comunidades` sin países devuelve las comunidades de toda la base.
 
 ### 4.5. `src/volcarEndpoints.py`
 `guardar_en_mysql(...)` sigue siendo la función que llaman el cuaderno de ingesta y `servicio_bd`. Descarga una vez cada organización y cada dataset del Registry, anula `publishingOrganizationKey` si esa organización no se ha guardado, y dentro de `get_session()` llama al repositorio: taxón, organizaciones, datasets y ocurrencias. El argumento `db_config` se conserva para no romper las llamadas antiguas; la sesión usa `.env`.
@@ -114,7 +114,7 @@ Consultas:
 Fachada para los cuadernos. Cada función abre `get_session()`, pide los datos al repositorio y devuelve un `DataFrame` con alias Darwin Core (`decimalLatitude`, `scientificName`, `basisOfRecord`, `gbif_url`) más `dataset_title`, `publishing_org_title`, `url_imagen` y `num_media`.
 
 * `obtener_resumen_general()`
-* `cargar_ocurrencias(paises, solo_lobo_silvestre, anio_min, comunidad)`
+* `cargar_ocurrencias(paises, solo_lobo_silvestre, anio_min, anio_max, fecha_desde, fecha_hasta, taxon_key)`. `paises=None` no filtra por país. Un año concreto es `anio_min` y `anio_max` iguales. Un intervalo de fechas usa `datetime.date` en `fecha_desde` y `fecha_hasta`.
 * `resumen_territorial_por_comunidad(pais)`
 * `top_datasets_publicadores(limite)`
 * `consultar_campos_raw_json(limite)`
@@ -124,8 +124,8 @@ Fachada para los cuadernos. Cada función abre `get_session()`, pide los datos a
 ### 4.7. `app_tkinter.py` y `src/gui_tk.py`
 `app_tkinter.py` abre la ventana «Biodiversidad GBIF». Al arrancar consulta MySQL y muestra la tabla.
 
-* **Consultar:** filtros de especie, país, año y comunidad. El contador distingue las filas cargadas del total del filtro (`contar_ocurrencias`). La ficha de la derecha resume la fila; si el epíteto es `familiaris`, avisa de que es perro doméstico. Doble clic abre la ficha en GBIF. «Ver mapa» y «Exportar CSV» usan las filas que están en pantalla y dejan el HTML y el CSV en `salidas_gbif_multiespecie/`.
-* **Traer datos de GBIF:** resuelve el taxón, pagina `/v1/occurrence/search` con barra de progreso y botón Cancelar, y hace el mismo upsert que `guardar_en_mysql`. Si se cancela antes de guardar, no escribe. Al terminar refresca los conteos y la consulta.
+* **Consultar:** filtros de especie, país (cualquier código ISO, varios a la vez, o Todos), comunidad y tiempo. El tiempo puede ser un año (`2018` en Desde y en Hasta), un intervalo de años (`2010` y `2018`) o un intervalo de fechas (`2018-03-01` y `2018-06-30`). Hasta vacío llega hasta hoy. El contador distingue las filas cargadas del total del filtro (`contar_ocurrencias`). La ficha de la derecha resume la fila; si el epíteto es `familiaris`, avisa de que es perro doméstico. Doble clic abre la ficha en GBIF. «Ver mapa» y «Exportar CSV» usan las filas que están en pantalla y dejan el HTML y el CSV en `salidas_gbif_multiespecie/`.
+* **Traer datos de GBIF:** los mismos países y las mismas fechas. Resuelve el taxón, pagina `/v1/occurrence/search` con barra de progreso y botón Cancelar, y hace el mismo upsert que `guardar_en_mysql`. Si se cancela antes de guardar, no escribe. Al terminar refresca los conteos y la consulta.
 
 La otra ventana, `interfaz_gbif.py`, sigue sirviendo para SQLite, el catálogo por clases y la exportación. Cuando toca MySQL, también acaba en `guardar_en_mysql` y en `consulta_gbif`, o sea en el ORM.
 
