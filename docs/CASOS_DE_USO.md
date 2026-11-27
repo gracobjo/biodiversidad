@@ -22,7 +22,7 @@ Actores: persona investigadora, persona analista, persona ingeniera de datos. La
 | CU-12 | Exportar tabla y mapa | Investigadora | RF-09, RF-10, RF-19 | interfaz o celda de exportación del cuaderno |
 | CU-13 | Validar calidad de la muestra | Analista | RF-05, RF-07 | cuadernos de exploración y diccionario de datos |
 | CU-14 | Ver especies de varias clases | Investigadora | RF-21 | interfaz o `gbif_especies_por_clase_es_pt.ipynb` |
-| CU-15 | Medir indicadores de MySQL | Analista | RF-22 | `src/kpi_*.py` y `src/kpis/` |
+| CU-15 | Medir indicadores de MySQL | Analista | RF-22 | pestaña Indicadores de `app_tkinter.py`, o `src/kpi_*.py` |
 
 ## CU-01 Explorar una especie en España
 
@@ -179,10 +179,12 @@ Actores: persona investigadora, persona analista, persona ingeniera de datos. La
 
 **Flujo.**
 
-1. Desde `src/`, lanza el tema: `..\.venv\Scripts\python.exe kpi_volumen.py` (y, con el mismo patrón, `kpi_territorio.py`, `kpi_cobertura.py`, `kpi_evidencia.py`, `kpi_taxonomia.py`, `kpi_calidad.py` o `kpi_publicadores.py`).
-2. La salida es el recuento de toda la base. Para un país, un año o un intervalo, se pasa un `FiltroKpi` en la llamada, como en la sección 4.9 de [documentacion_del_pipeline_gbif_y_mysql_8.md](./documentacion_del_pipeline_gbif_y_mysql_8.md).
+1. Abre `python app_tkinter.py` y entra en Indicadores. La pestaña calcula el volumen de toda la base.
+2. Elige otro tema en la lista, o acota con país, Desde, Hasta y especie, y pulsa Calcular. El mismo valor en Desde y Hasta deja solo ese año o ese día.
 3. No se abre ninguna conexión con `api.gbif.org` y no se escribe en MySQL.
 
-**Postcondición.** El resultado queda en la consola. El porcentaje de un ranking recortado (municipios, datasets con límite, registradores) se lee sobre el total filtrado.
+**Alternativa.** Con el entorno activado, desde la raíz, `python src\kpi_volumen.py` (y el mismo patrón para el resto de `kpi_*.py`) imprime el tema en la consola. El recorte se escribe con `FiltroKpi` dentro del script, como en la sección 4.9 de [documentacion_del_pipeline_gbif_y_mysql_8.md](./documentacion_del_pipeline_gbif_y_mysql_8.md).
+
+**Postcondición.** El resultado queda en la pestaña, o en la consola si se usó el script. El porcentaje de un ranking recortado (municipios, datasets con límite, registradores) se lee sobre el total filtrado.
 
 **Lectura.** Un conteo de ocurrencias es esfuerzo de publicación. La suma de `individual_count` no es un censo. «Sin dato» entra en los porcentajes de vitalidad, sexo y fase vital.

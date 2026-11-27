@@ -77,6 +77,7 @@ flowchart TB
   ui --> exporta
   orm --> ventana
   ventana --> sesion
+  ventana --> kpis
   servicio --> descarga
   servicio --> sqlite
   servicio --> mysqlpy
@@ -173,6 +174,7 @@ classDiagram
     +exportar_csv()
     +descargar()
     +abrir_ficha()
+    +calcular_indicadores()
   }
   class Session {
     +commit()
@@ -232,7 +234,7 @@ classDiagram
 
 ## 3.2. Indicadores de MySQL
 
-Los lanzadores `src/kpi_*.py` abren `get_session()` y llaman al módulo de `src/kpis/` que lleva su nombre. `FiltroKpi` vacío no recorta: la consulta mide toda la base. El filtro reutiliza las cláusulas de `BiodiversidadRepository`.
+La pestaña Indicadores llama a `calcular_indicadores()`, que pide las filas a `src/kpis/vista.py`. Los lanzadores `src/kpi_*.py` abren `get_session()` y llaman al módulo de `src/kpis/` que lleva su nombre. `FiltroKpi` vacío no recorta: la consulta mide toda la base. El filtro reutiliza las cláusulas de `BiodiversidadRepository`.
 
 ```mermaid
 classDiagram

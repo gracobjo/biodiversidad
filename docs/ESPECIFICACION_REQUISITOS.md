@@ -84,7 +84,7 @@ Fuera del alcance:
 
 | ID | Requisito |
 |---|---|
-| RF-22 | Sobre MySQL ya cargada, `src/kpis/` calcula volumen, territorio GADM, cobertura de campos, evidencia y vitalidad, lobo frente a perro, fotografía, hábitat, incertidumbre de la coordenada y publicadores. Cada tema se imprime desde `src/` con `kpi_volumen.py`, `kpi_territorio.py`, `kpi_cobertura.py`, `kpi_evidencia.py`, `kpi_taxonomia.py`, `kpi_calidad.py` o `kpi_publicadores.py`. Sin `FiltroKpi` miden toda la base. Con él, el recorte es el de RF-04. Un conteo de ocurrencias mide esfuerzo de publicación, no abundancia. Estas consultas no están en SQLite. |
+| RF-22 | Sobre MySQL ya cargada, `src/kpis/` calcula volumen, territorio GADM, cobertura de campos, evidencia y vitalidad, lobo frente a perro, fotografía, hábitat, incertidumbre de la coordenada y publicadores. La pestaña Indicadores de `app_tkinter.py` los muestra: al abrirla calcula el volumen de toda la base, y país, fechas y especie aplican el recorte de RF-04. Los mismos temas se imprimen desde `src/` con `kpi_volumen.py`, `kpi_territorio.py`, `kpi_cobertura.py`, `kpi_evidencia.py`, `kpi_taxonomia.py`, `kpi_calidad.py` o `kpi_publicadores.py`. Sin filtro miden toda la base. Un conteo de ocurrencias mide esfuerzo de publicación, no abundancia. Estas consultas no están en SQLite. |
 
 ## 4. Requisitos no funcionales
 

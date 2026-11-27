@@ -27,7 +27,7 @@ biodiversidad/
 │   ├── repository.py                      # BiodiversidadRepository: upserts y consultas
 │   ├── volcarEndpoints.py                 # Registry de GBIF y persistencia vía el repositorio
 │   ├── consulta_gbif.py                   # Fachada pandas para los cuadernos
-│   ├── gui_tk.py                          # Ventana: Consultar y Traer datos de GBIF
+│   ├── gui_tk.py                          # Ventana: Consultar, Indicadores y Traer datos de GBIF
 │   ├── mapa_enlaces.py                    # Reenvía el clic del mapa al navegador
 │   ├── kpis/                              # Indicadores ORM, un módulo por tema
 │   │   ├── filtros.py                     # FiltroKpi, el mismo recorte que la ventana
@@ -38,6 +38,7 @@ biodiversidad/
 │   │   ├── taxonomia.py                   # Lobo, perro y fichas
 │   │   ├── calidad.py                     # Foto, hábitat e incertidumbre
 │   │   ├── publicadores.py                # Datasets, organizaciones, registradores
+│   │   ├── vista.py                       # Filas de la pestaña Indicadores
 │   │   └── salida.py                      # Impresión compartida de los lanzadores
 │   ├── kpi_volumen.py                     # Lanzador de consola
 │   ├── kpi_territorio.py
@@ -142,6 +143,7 @@ Fachada para los cuadernos. Cada función abre `get_session()`, pide los datos a
 `app_tkinter.py` abre la ventana «Biodiversidad GBIF». Al arrancar consulta MySQL y muestra la tabla.
 
 * **Consultar:** filtros de especie, país (cualquier código ISO, varios a la vez, o Todos), comunidad y tiempo. El tiempo puede ser un año (`2018` en Desde y en Hasta), un intervalo de años (`2010` y `2018`) o un intervalo de fechas (`2018-03-01` y `2018-06-30`). Hasta vacío llega hasta hoy. El contador distingue las filas cargadas del total del filtro (`contar_ocurrencias`). La ficha de la derecha resume la fila; si el epíteto es `familiaris`, avisa de que es perro doméstico. Doble clic abre la ficha en GBIF. «Ver mapa» y «Exportar CSV» usan las filas que están en pantalla y dejan el HTML y el CSV en `salidas_gbif_multiespecie/`.
+* **Indicadores:** al abrir la pestaña calcula el volumen de toda la base. A la izquierda están Volumen, Territorio, Cobertura de campos, Evidencia y estado, Taxonomía, Calidad del registro y Quién publica. País en Todos, fechas vacías y «Todas las especies» no recortan. El tiempo usa las mismas reglas que Consultar, y «Excluir perro doméstico» solo aparece si la especie es todas o *Canis lupus*. La línea inferior dice cuántos registros entran en el filtro. `src/kpis/vista.py` prepara las filas; la ventana no llama a GBIF ni escribe en MySQL.
 * **Traer datos de GBIF:** los mismos países y las mismas fechas. Resuelve el taxón, pagina `/v1/occurrence/search` con barra de progreso y botón Cancelar, y hace el mismo upsert que `guardar_en_mysql`. Si se cancela antes de guardar, no escribe. Al terminar refresca los conteos y la consulta.
 
 La otra ventana, `interfaz_gbif.py`, sigue sirviendo para SQLite, el catálogo por clases y la exportación. Cuando toca MySQL, también acaba en `guardar_en_mysql` y en `consulta_gbif`, o sea en el ORM.
@@ -151,7 +153,7 @@ La otra ventana, `interfaz_gbif.py`, sigue sirviendo para SQLite, el catálogo p
 
 ### 4.9. Indicadores (`src/kpis/` y `src/kpi_*.py`)
 
-Los indicadores leen MySQL ya cargada. No llaman a GBIF y no escriben en la base. Cada función recibe una `Session` de `get_session()` y, si hace falta acotar, un `FiltroKpi`. Sin filtro miden toda la base: no heredan el país ni el año por defecto de la ventana.
+Los indicadores leen MySQL ya cargada. No llaman a GBIF y no escriben en la base. La pestaña Indicadores los muestra con `src/kpis/vista.py`. Cada función de consulta recibe una `Session` de `get_session()` y, si hace falta acotar, un `FiltroKpi`. Sin filtro miden toda la base: la pestaña nace con País en Todos, fechas vacías y todas las especies, y no hereda el país ni el año de Consultar.
 
 Un conteo de ocurrencias mide esfuerzo de publicación. No es abundancia, densidad ni tamaño de población. El año en curso está incompleto y no se compara con un año cerrado.
 
@@ -240,8 +242,10 @@ Cuaderno de exploración que opera 100 % contra MySQL sin llamadas a internet:
 ### 5.3. `prueba_lectura_mysql.py`
 Script de consola para ejecutar de forma rápida la batería de pruebas de lectura sobre todas las funciones de `src/consulta_gbif.py`.
 
-### 5.4. Indicadores por consola (`src/kpi_*.py`)
-Cada `kpi_*.py` abre `get_session()`, llama a las funciones de su módulo en `src/kpis/` e imprime el resultado. El directorio de trabajo es `src/`. Sin argumentos miden toda la base. Para un país o un año se edita el `FiltroKpi` dentro de `main()`, como en la sección 4.9. Hace falta MySQL en marcha, la base `gbif_biodiversidad` cargada y `.env` en la raíz.
+### 5.4. Indicadores en la ventana y por consola
+La pestaña Indicadores de `python app_tkinter.py` es la vía habitual. Al entrar muestra el volumen; el resto de temas se elige en la lista. País, fechas y especie están en la propia pestaña.
+
+Cada `src/kpi_*.py` abre `get_session()`, llama a las funciones de su módulo en `src/kpis/` e imprime el mismo resultado. Con el entorno activado, desde la raíz: `python src\kpi_volumen.py` (y el mismo patrón para territorio, cobertura, evidencia, taxonomía, calidad y publicadores). Sin cambios miden toda la base. Para un país o un año se edita el `FiltroKpi` dentro de `main()`, como en la sección 4.9. Hace falta MySQL en marcha, la base `gbif_biodiversidad` cargada y `.env` en la raíz.
 
 ---
 

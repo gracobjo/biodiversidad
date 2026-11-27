@@ -89,7 +89,7 @@ Casos de uso, componentes, la ventana ORM (`app_tkinter.py`, `BiodiversidadRepos
 
 ### 8. Pipelines
 - [documentacion_del_pipeline_gbif_y_sqlite.md](./documentacion_del_pipeline_gbif_y_sqlite.md)
-- [documentacion_del_pipeline_gbif_y_mysql_8.md](./documentacion_del_pipeline_gbif_y_mysql_8.md). La sección 4.9 describe los indicadores de `src/kpis/` y cómo lanzarlos con `src/kpi_*.py`.
+- [documentacion_del_pipeline_gbif_y_mysql_8.md](./documentacion_del_pipeline_gbif_y_mysql_8.md). La sección 4.9 describe los indicadores de `src/kpis/`, la pestaña Indicadores y los lanzadores `src/kpi_*.py`.
 
 ---
 
@@ -205,6 +205,7 @@ Si encuentras:
 |---------|-------|---------|
 | 1.0 | 2026-11-22 | Creación inicial: MANUAL_USUARIO.md, GUIA_API_GBIF.md, este índice |
 | 1.1 | 2026-11-27 | Indicadores de MySQL: `src/kpis/`, lanzadores `src/kpi_*.py`, RF-22 y CU-15 |
+| 1.2 | 2026-11-27 | Pestaña Indicadores en la ventana de MySQL |
 
 ---
 

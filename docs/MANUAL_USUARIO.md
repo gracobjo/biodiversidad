@@ -496,21 +496,22 @@ python app_tkinter.py
 python interfaz_gbif.py
 ```
 
-`app_tkinter.py` es la ventana de MySQL. Al abrirla ya hay una consulta. En Consultar el país es un código ISO (`FR`), varios (`ES, PT`) o Todos, y el tiempo es un año, un intervalo de años o un intervalo de fechas (`2018-03-01`). Hasta vacío llega hasta hoy. La pestaña muestra la ficha del registro, el mapa y el CSV de lo que está en pantalla. Traer datos de GBIF usa los mismos países y fechas, con progreso, y se puede cancelar antes de escribir. La conexión sale de `.env` a través de `src/database.py`. `interfaz_gbif.py` consulta la API, crea y puebla SQLite o MySQL, filtra el listado y exporta a CSV, JSON y HTML. El detalle está en [CUADERNOS.md](./CUADERNOS.md) y en [documentacion_del_pipeline_gbif_y_mysql_8.md](./documentacion_del_pipeline_gbif_y_mysql_8.md).
+`app_tkinter.py` es la ventana de MySQL. Al abrirla ya hay una consulta. En Consultar el país es un código ISO (`FR`), varios (`ES, PT`) o Todos, y el tiempo es un año, un intervalo de años o un intervalo de fechas (`2018-03-01`). Hasta vacío llega hasta hoy. La pestaña muestra la ficha del registro, el mapa y el CSV de lo que está en pantalla. Indicadores calcula, al entrar, el volumen de toda la base. A la izquierda se elige territorio, cobertura de campos, evidencia y estado, taxonomía, calidad del registro o quién publica. País en Todos y fechas vacías miden toda la base; el mismo valor en Desde y Hasta deja solo ese año o ese día. La línea de abajo recuerda que un conteo de registros mide publicación, no abundancia. Traer datos de GBIF usa los mismos países y fechas, con progreso, y se puede cancelar antes de escribir. La conexión sale de `.env` a través de `src/database.py`. `interfaz_gbif.py` consulta la API, crea y puebla SQLite o MySQL, filtra el listado y exporta a CSV, JSON y HTML. El detalle está en [CUADERNOS.md](./CUADERNOS.md) y en [documentacion_del_pipeline_gbif_y_mysql_8.md](./documentacion_del_pipeline_gbif_y_mysql_8.md).
 
-Los indicadores de la base MySQL se imprimen por consola, con el servidor en marcha y la base ya cargada. Desde `src/`:
+Los mismos indicadores se pueden imprimir por consola, con el entorno activado y la base ya cargada. Desde la raíz del proyecto:
 
 ```powershell
-..\.venv\Scripts\python.exe kpi_volumen.py
-..\.venv\Scripts\python.exe kpi_territorio.py
-..\.venv\Scripts\python.exe kpi_cobertura.py
-..\.venv\Scripts\python.exe kpi_evidencia.py
-..\.venv\Scripts\python.exe kpi_taxonomia.py
-..\.venv\Scripts\python.exe kpi_calidad.py
-..\.venv\Scripts\python.exe kpi_publicadores.py
+.venv\Scripts\Activate.ps1
+python src\kpi_volumen.py
+python src\kpi_territorio.py
+python src\kpi_cobertura.py
+python src\kpi_evidencia.py
+python src\kpi_taxonomia.py
+python src\kpi_calidad.py
+python src\kpi_publicadores.py
 ```
 
-Sin cambios, cada script mide toda la base. País, año o intervalo se acotan con `FiltroKpi` dentro del script. Un conteo de registros es esfuerzo de publicación, no un censo. La sección 4.9 del documento de MySQL describe cada consulta.
+Sin cambios, cada script mide toda la base. País, año o intervalo se acotan con `FiltroKpi` dentro del script. La sección 4.9 del documento de MySQL describe cada consulta.
 
 **Especies con coordenadas** lista cinco especies de cada clase (mamíferos, escamosos, anfibios, insectos, plantas y aves), con su familia. Pulsar una fila la escribe arriba. **Limpiar** devuelve *Canis lupus*. Ver taxón, Ver ocurrencias, Poblar y la pestaña Consultas usan esa especie. La exportación propone un fichero con su nombre (`turdus_merula.csv`, `.json` o `.html`) y lo repite dentro del archivo: columna en el CSV, campo `especie` en el JSON y recuadro en el mapa. El mismo catálogo, sin descargar ocurrencias, está en [`gbif_especies_por_clase_es_pt.ipynb`](../notebooks/gbif_especies_por_clase_es_pt.ipynb).
 

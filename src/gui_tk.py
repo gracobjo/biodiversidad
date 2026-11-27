@@ -16,6 +16,8 @@ from urllib3.util.retry import Retry
 
 from database import get_session
 from exportacion_gbif import CARPETA_SALIDAS, exportar_csv, exportar_mapa_html
+from kpis import FiltroKpi
+from kpis.vista import NodoIndicador, TEMAS, filas_indicador
 from models import Ocurrencia
 from repository import BiodiversidadRepository
 
@@ -56,6 +58,7 @@ class BiodiversidadApp(tk.Tk):
         self._paises_en_bd: set[str] = set()
         self._orden_col = "anio"
         self._orden_desc = True
+        self._kpi_ocupado = False
 
         self._construir_ui()
         self._procesar_cola_logs()
@@ -72,14 +75,20 @@ class BiodiversidadApp(tk.Tk):
         self.lbl_estado_bd.pack(side="left")
         ttk.Button(barra_top, text="Actualizar conteos", command=self.refrescar_resumen_bd).pack(side="right")
 
-        notebook = ttk.Notebook(self)
-        notebook.pack(fill="both", expand=True, padx=12, pady=(0, 12))
+        self.notebook = ttk.Notebook(self)
+        self.notebook.pack(fill="both", expand=True, padx=12, pady=(0, 12))
+        notebook = self.notebook
         self.tab_consultar = ttk.Frame(notebook, padding=10)
+        self.tab_indicadores = ttk.Frame(notebook, padding=10)
         self.tab_descarga = ttk.Frame(notebook, padding=10)
         notebook.add(self.tab_consultar, text="Consultar")
+        notebook.add(self.tab_indicadores, text="Indicadores")
         notebook.add(self.tab_descarga, text="Traer datos de GBIF")
         self._construir_tab_consultar()
+        self._construir_tab_indicadores()
         self._construir_tab_descarga()
+        self._kpi_visto = False
+        notebook.bind("<<NotebookTabChanged>>", self._al_abrir_indicadores)
 
     def _construir_tab_consultar(self) -> None:
         filtros = ttk.LabelFrame(self.tab_consultar, text="Filtros", padding=10)
@@ -228,6 +237,95 @@ class BiodiversidadApp(tk.Tk):
         ttk.Button(barra, text="Ver mapa", command=self.ver_mapa).pack(side="right", padx=(6, 0))
         ttk.Button(barra, text="Exportar CSV", command=self.exportar_csv_visible).pack(side="right")
 
+    def _construir_tab_indicadores(self) -> None:
+        filtros = ttk.LabelFrame(self.tab_indicadores, text="Qué medir", padding=10)
+        filtros.pack(fill="x", pady=(0, 8))
+
+        ttk.Label(filtros, text="País:").grid(row=0, column=0, padx=(0, 4), sticky="w")
+        self.var_pais_kpi = tk.StringVar(value="Todos")
+        self.cb_pais_kpi = ttk.Combobox(filtros, textvariable=self.var_pais_kpi, values=("Todos", "ES + PT", "ES", "PT"), width=16)
+        self.cb_pais_kpi.grid(row=0, column=1, padx=(0, 12), sticky="w")
+        self.cb_pais_kpi.bind("<Return>", lambda _e: self.calcular_indicadores())
+
+        ttk.Label(filtros, text="Desde:").grid(row=0, column=2, padx=(0, 4), sticky="w")
+        self.var_desde_kpi = tk.StringVar(value="")
+        entrada_desde = ttk.Entry(filtros, textvariable=self.var_desde_kpi, width=12)
+        entrada_desde.grid(row=0, column=3, padx=(0, 8), sticky="w")
+        entrada_desde.bind("<Return>", lambda _e: self.calcular_indicadores())
+
+        ttk.Label(filtros, text="Hasta:").grid(row=0, column=4, padx=(0, 4), sticky="w")
+        self.var_hasta_kpi = tk.StringVar(value="")
+        entrada_hasta = ttk.Entry(filtros, textvariable=self.var_hasta_kpi, width=12)
+        entrada_hasta.grid(row=0, column=5, padx=(0, 12), sticky="w")
+        entrada_hasta.bind("<Return>", lambda _e: self.calcular_indicadores())
+
+        ttk.Label(filtros, text="Especie:").grid(row=0, column=6, padx=(0, 4), sticky="w")
+        self.var_especie_kpi = tk.StringVar(value="Todas las especies")
+        self.cb_especie_kpi = ttk.Combobox(
+            filtros, textvariable=self.var_especie_kpi, values=("Todas las especies",), state="readonly", width=28
+        )
+        self.cb_especie_kpi.grid(row=0, column=7, padx=(0, 12), sticky="w")
+        self.cb_especie_kpi.bind("<<ComboboxSelected>>", lambda _e: self._actualizar_filtro_lobo_kpi())
+
+        ttk.Button(filtros, text="Calcular", command=self.calcular_indicadores).grid(row=0, column=8, sticky="e")
+
+        self.var_lobo_kpi = tk.BooleanVar(value=False)
+        self.chk_lobo_kpi = ttk.Checkbutton(
+            filtros,
+            text="Excluir perro doméstico (dejar solo lobo)",
+            variable=self.var_lobo_kpi,
+        )
+        self.chk_lobo_kpi.grid(row=1, column=0, columnspan=5, sticky="w", pady=(8, 0))
+        ttk.Label(
+            filtros,
+            text="Vacío mide toda la base. Fecha: 2018, o 2018-03-01. El mismo valor en Desde y Hasta acota ese año o ese día.",
+        ).grid(row=1, column=5, columnspan=4, sticky="w", pady=(8, 0))
+
+        cuerpo = ttk.Panedwindow(self.tab_indicadores, orient="horizontal")
+        cuerpo.pack(fill="both", expand=True)
+
+        marco_temas = ttk.Frame(cuerpo)
+        self.temas_kpi = ttk.Treeview(marco_temas, show="tree", selectmode="browse")
+        self.temas_kpi.column("#0", width=180, stretch=True)
+        for clave, titulo in TEMAS:
+            self.temas_kpi.insert("", "end", iid=clave, text=titulo)
+        self.temas_kpi.pack(fill="both", expand=True)
+        self.temas_kpi.bind("<<TreeviewSelect>>", lambda _e: self.calcular_indicadores())
+
+        marco_tabla = ttk.Frame(cuerpo)
+        self.tree_kpi = ttk.Treeview(
+            marco_tabla,
+            columns=("detalle", "registros", "porcentaje"),
+            show="tree headings",
+            selectmode="browse",
+        )
+        self.tree_kpi.heading("#0", text="Indicador")
+        self.tree_kpi.heading("detalle", text="Detalle")
+        self.tree_kpi.heading("registros", text="Registros")
+        self.tree_kpi.heading("porcentaje", text="%")
+        self.tree_kpi.column("#0", width=280, anchor="w")
+        self.tree_kpi.column("detalle", width=220, anchor="w")
+        self.tree_kpi.column("registros", width=110, anchor="e")
+        self.tree_kpi.column("porcentaje", width=80, anchor="e")
+        scroll_y = ttk.Scrollbar(marco_tabla, orient="vertical", command=self.tree_kpi.yview)
+        scroll_x = ttk.Scrollbar(marco_tabla, orient="horizontal", command=self.tree_kpi.xview)
+        self.tree_kpi.configure(yscrollcommand=scroll_y.set, xscrollcommand=scroll_x.set)
+        self.tree_kpi.grid(row=0, column=0, sticky="nsew")
+        scroll_y.grid(row=0, column=1, sticky="ns")
+        scroll_x.grid(row=1, column=0, sticky="ew")
+        marco_tabla.rowconfigure(0, weight=1)
+        marco_tabla.columnconfigure(0, weight=1)
+        self.tree_kpi.insert("", "end", text="Elige un tema a la izquierda.")
+
+        cuerpo.add(marco_temas, weight=1)
+        cuerpo.add(marco_tabla, weight=4)
+
+        self.lbl_kpi = ttk.Label(
+            self.tab_indicadores,
+            text="Un conteo de registros mide publicación, no abundancia.",
+        )
+        self.lbl_kpi.pack(anchor="w", pady=(8, 0))
+
     def _construir_tab_descarga(self) -> None:
         params = ttk.LabelFrame(self.tab_descarga, text="Qué descargar de GBIF", padding=10)
         params.pack(fill="x", pady=(0, 8))
@@ -281,8 +379,8 @@ class BiodiversidadApp(tk.Tk):
         if self._bd_ok:
             self.ejecutar_consulta()
 
-    def _paises_seleccionados(self) -> tuple[str, ...] | None:
-        texto = self.var_pais.get().strip()
+    def _paises_seleccionados(self, origen: tk.StringVar | None = None) -> tuple[str, ...] | None:
+        texto = (origen or self.var_pais).get().strip()
         if not texto or texto.casefold() == "todos":
             return None
         compacto = texto.upper().replace(" ", "")
@@ -365,8 +463,8 @@ class BiodiversidadApp(tk.Tk):
             return {"year": str(inicio)}
         return {"year": f"{inicio},{fin}"}
 
-    def _especie_permite_filtro_lobo(self) -> bool:
-        nombre = self.var_especie_filtro.get()
+    def _especie_permite_filtro_lobo(self, nombre: str | None = None) -> bool:
+        nombre = self.var_especie_filtro.get() if nombre is None else nombre
         if nombre == "Todas las especies":
             return True
         if self._mapa_taxones.get(nombre) == TAXON_LOBO:
@@ -378,6 +476,89 @@ class BiodiversidadApp(tk.Tk):
             self.chk_lobo.grid()
         else:
             self.chk_lobo.grid_remove()
+
+    def _actualizar_filtro_lobo_kpi(self) -> None:
+        if self._especie_permite_filtro_lobo(self.var_especie_kpi.get()):
+            self.chk_lobo_kpi.grid()
+        else:
+            self.var_lobo_kpi.set(False)
+            self.chk_lobo_kpi.grid_remove()
+
+    def _filtro_kpi(self) -> FiltroKpi:
+        especie = self.var_especie_kpi.get()
+        taxon_key = None if especie == "Todas las especies" else self._mapa_taxones.get(especie)
+        solo_lobo = self.var_lobo_kpi.get() and self._especie_permite_filtro_lobo(especie)
+        intervalo = self._intervalo(self.var_desde_kpi, self.var_hasta_kpi)
+        return FiltroKpi(
+            paises=self._paises_seleccionados(self.var_pais_kpi),
+            anio_min=intervalo["anio_min"],
+            anio_max=intervalo["anio_max"],
+            fecha_desde=intervalo["fecha_desde"],
+            fecha_hasta=intervalo["fecha_hasta"],
+            taxon_key=taxon_key,
+            solo_lobo_silvestre=solo_lobo,
+        )
+
+    def _al_abrir_indicadores(self, _evento=None) -> None:
+        if self._kpi_visto:
+            return
+        if self.notebook.select() != str(self.tab_indicadores):
+            return
+        self._kpi_visto = True
+        self.temas_kpi.selection_set("volumen")
+        if not self.tree_kpi.get_children() or self.tree_kpi.item(self.tree_kpi.get_children()[0], "text") == "Elige un tema a la izquierda.":
+            self.calcular_indicadores()
+
+    def calcular_indicadores(self) -> None:
+        if self._kpi_ocupado:
+            return
+        seleccion = self.temas_kpi.selection()
+        if not seleccion:
+            self.lbl_kpi.config(text="Elige un tema a la izquierda.")
+            return
+        try:
+            filtro = self._filtro_kpi()
+        except ValueError as exc:
+            messagebox.showwarning("Revisa el filtro", str(exc))
+            return
+        if not self._bd_ok:
+            self.refrescar_resumen_bd()
+            if not self._bd_ok:
+                return
+        self._kpi_ocupado = True
+        self.configure(cursor="watch")
+        self.lbl_kpi.config(text="Calculando...")
+        self.update_idletasks()
+        try:
+            with get_session() as session:
+                nodos, estado = filas_indicador(seleccion[0], session, filtro)
+        except Exception as exc:
+            self.lbl_kpi.config(text="No se pudo calcular el indicador.")
+            messagebox.showerror("Indicadores", str(exc))
+            return
+        finally:
+            self._kpi_ocupado = False
+            self.configure(cursor="")
+        self._pintar_kpi(nodos)
+        self.lbl_kpi.config(text=estado)
+
+    def _pintar_kpi(self, nodos: list[NodoIndicador]) -> None:
+        hijos = self.tree_kpi.get_children()
+        if hijos:
+            self.tree_kpi.delete(*hijos)
+        for nodo in nodos:
+            self._insertar_nodo_kpi("", nodo)
+
+    def _insertar_nodo_kpi(self, padre: str, nodo: NodoIndicador) -> None:
+        item = self.tree_kpi.insert(
+            padre,
+            "end",
+            text=nodo.titulo,
+            values=(nodo.detalle, nodo.registros, nodo.porcentaje),
+            open=True,
+        )
+        for hijo in nodo.hijos:
+            self._insertar_nodo_kpi(item, hijo)
 
     def _leer_limite(self) -> int:
         texto = self.var_limite.get().strip()
@@ -427,13 +608,18 @@ class BiodiversidadApp(tk.Tk):
                 self._paises_en_bd = set(repo.listar_paises())
                 opciones_pais = ["Todos", "ES + PT", *sorted(self._paises_en_bd)]
                 self.cb_pais["values"] = opciones_pais
+                self.cb_pais_kpi["values"] = opciones_pais
                 self._actualizar_lista_comunidades(repo_existente=repo)
             self._mapa_taxones = {nombre: clave for clave, nombre in taxones}
             opciones = ["Todas las especies", *self._mapa_taxones.keys()]
             self.cb_especie_filtro["values"] = opciones
+            self.cb_especie_kpi["values"] = opciones
             if self.var_especie_filtro.get() not in opciones:
                 self.var_especie_filtro.set("Todas las especies")
+            if self.var_especie_kpi.get() not in opciones:
+                self.var_especie_kpi.set("Todas las especies")
             self._actualizar_filtro_lobo()
+            self._actualizar_filtro_lobo_kpi()
             self._bd_ok = True
             self.lbl_estado_bd.config(
                 text=(
