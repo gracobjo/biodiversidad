@@ -10,7 +10,7 @@ El proyecto implementa una arquitectura **ETL (Extract, Transform, Load) + cach�
 
 El flujo se divide en **dos fases desacopladas**:
 1. **Fase A (Online / Ingesta):** Consulta los *endpoints* de taxonomía, ocurrencias y metadatos del *Registry* de GBIF y persiste la información de forma idempotente en una instancia local de **MySQL 8**.
-2. **Fase B (Offline / Análisis):** Lee las tablas locales con SQLAlchemy ORM (`get_session` y `BiodiversidadRepository`). `consulta_gbif.py` traduce las entidades a `DataFrame` para filtrados taxonómicos, agregaciones territoriales, campos JSON y mapas `folium`, sin volver a llamar a la API.
+2. **Fase B (Offline / Análisis):** Lee las tablas locales con SQLAlchemy ORM (`get_session` y `BiodiversidadRepository`). `consulta_gbif.py` traduce las entidades a `DataFrame` para filtrados taxonómicos, agregaciones territoriales, campos JSON y mapas `folium`. `src/kpis/` calcula los indicadores de la misma base. Ninguna de las dos vías vuelve a llamar a la API.
 
 ---
 
@@ -28,7 +28,24 @@ biodiversidad/
 │   ├── volcarEndpoints.py                 # Registry de GBIF y persistencia vía el repositorio
 │   ├── consulta_gbif.py                   # Fachada pandas para los cuadernos
 │   ├── gui_tk.py                          # Ventana: Consultar y Traer datos de GBIF
-│   └── mapa_enlaces.py                    # Reenvía el clic del mapa al navegador
+│   ├── mapa_enlaces.py                    # Reenvía el clic del mapa al navegador
+│   ├── kpis/                              # Indicadores ORM, un módulo por tema
+│   │   ├── filtros.py                     # FiltroKpi, el mismo recorte que la ventana
+│   │   ├── volumen.py                     # País, año, mes
+│   │   ├── territorio.py                  # Comunidad, provincia, municipio
+│   │   ├── cobertura.py                   # Porcentaje de filas con cada campo
+│   │   ├── evidencia.py                   # Evidencia, vitalidad, sexo, fase vital
+│   │   ├── taxonomia.py                   # Lobo, perro y fichas
+│   │   ├── calidad.py                     # Foto, hábitat e incertidumbre
+│   │   ├── publicadores.py                # Datasets, organizaciones, registradores
+│   │   └── salida.py                      # Impresión compartida de los lanzadores
+│   ├── kpi_volumen.py                     # Lanzador de consola
+│   ├── kpi_territorio.py
+│   ├── kpi_cobertura.py
+│   ├── kpi_evidencia.py
+│   ├── kpi_taxonomia.py
+│   ├── kpi_calidad.py
+│   └── kpi_publicadores.py
 ├── salidas_gbif_multiespecie/
 │   └── mapa_ocurrencias_gbif.html
 ├── notebooks/ingesta_gbif_mysql.ipynb     # Fase A
@@ -132,6 +149,72 @@ La otra ventana, `interfaz_gbif.py`, sigue sirviendo para SQLite, el catálogo p
 ### 4.8. `src/mapa_enlaces.py`
 `activar_enlaces_externos(mapa)` añade al mapa un script que, dentro del iframe del cuaderno, reenvía el clic de la ficha o de la foto al documento del cuaderno. El visor de Jupyter no deja que ese iframe abra GBIF. El HTML guardado en `salidas_gbif_multiespecie/` no necesita el reenvío: el enlace abre el navegador por sí solo.
 
+### 4.9. Indicadores (`src/kpis/` y `src/kpi_*.py`)
+
+Los indicadores leen MySQL ya cargada. No llaman a GBIF y no escriben en la base. Cada función recibe una `Session` de `get_session()` y, si hace falta acotar, un `FiltroKpi`. Sin filtro miden toda la base: no heredan el país ni el año por defecto de la ventana.
+
+Un conteo de ocurrencias mide esfuerzo de publicación. No es abundancia, densidad ni tamaño de población. El año en curso está incompleto y no se compara con un año cerrado.
+
+`FiltroKpi` (`src/kpis/filtros.py`) reutiliza `BiodiversidadRepository._filtros_ocurrencias`, así que el recorte es el de Consultar:
+
+| Campo | Efecto si se rellena |
+| :--- | :--- |
+| `paises` | Uno o varios códigos ISO (`("ES",)` o `("ES", "PT")`). Vacío: todos los países de la base. |
+| `anio_min`, `anio_max` | Año o intervalo de años. El mismo valor en los dos deja solo ese año. Incluye registros de ese año aunque falten mes o día. |
+| `fecha_desde`, `fecha_hasta` | `datetime.date`. Si hay alguna de las dos, los años no se aplican además. |
+| `comunidad` | Nombre GADM de nivel 1. |
+| `taxon_key` | Una ficha concreta. |
+| `solo_lobo_silvestre` | Por defecto `False`, así el perro doméstico sigue en el total. `True` deja `specific_epithet = lupus` y excluye el epíteto infraespecífico `familiaris`. |
+
+Las funciones devuelven dataclasses, no `DataFrame`. El porcentaje de un `Conteo` es sobre el total del recorte, salvo donde la tabla de abajo dice otra cosa.
+
+| Módulo | Función | Qué devuelve |
+| :--- | :--- | :--- |
+| `volumen` | `por_pais`, `por_anio`, `por_pais_y_anio` | Registros por país, por año y la serie país-año. |
+| `volumen` | `por_mes` | Enero a diciembre. El porcentaje es entre las filas que traen mes. |
+| `territorio` | `por_comunidad`, `por_provincia`, `por_municipio` | GADM nivel 1, 2 y municipio. `por_municipio` devuelve 30 filas. `por_provincia` acepta `limite`. El porcentaje de un ranking recortado se calcula sobre el total filtrado, así que esas filas no suman 100. |
+| `cobertura` | `cobertura_campos` | Filas con valor y porcentaje, para año, mes, día, coordenadas, incertidumbre, comunidad, provincia, municipio, tipo de evidencia, vitalidad, sexo, fase vital, individuos, quién registró, licencia, taxón enlazado, fotografía (`$.media`) y hábitat (`$.habitat`). |
+| `evidencia` | `por_evidencia`, `por_vitalidad`, `por_sexo`, `por_fase_vital` | Reparto de `basis_of_record`, `vitality`, `sex` y `life_stage`. La categoría «Sin dato» entra en el porcentaje. |
+| `evidencia` | `individuos_declarados` | Cuántas filas traen `individual_count`, su suma y la media de esas filas. La suma no es un censo. |
+| `taxonomia` | `lobo_y_perro` | Lobo (`lupus` y el infraespecífico no es `familiaris`), perro (`familiaris` en el epíteto específico o en el infraespecífico) y el resto. |
+| `taxonomia` | `por_taxon`, `sin_taxon_en_catalogo` | Registros por `taxon_key`, y cuántas ocurrencias se quedaron sin ficha en `taxones`. |
+| `taxonomia` | `taxones_sin_ocurrencias` | Fichas del catálogo sin ninguna ocurrencia. No usa el filtro. |
+| `calidad` | `fotos_y_habitat` | Registros con al menos una imagen o con hábitat en `raw_json`. |
+| `calidad` | `bandas_incertidumbre` | Mediana en metros (solo filas con dato) y bandas: sin dato, hasta 100 m, de 100 m a 1 km, de 1 km a 10 km, más de 10 km. Las bandas suman el total filtrado. |
+| `publicadores` | `por_dataset` | Ranking de datasets con licencia, DOI, tipo y organización. El porcentaje es sobre todas las ocurrencias filtradas, también si se pasa `limite`. |
+| `publicadores` | `catalogo_datasets` | Cuatro números del catálogo: datasets, con licencia, con DOI y con tipo. No depende del filtro de ocurrencias. |
+| `publicadores` | `por_organizacion` | Institución publicadora. El país es el de la institución, no el del avistamiento. |
+| `publicadores` | `pais_publicador_y_pais_avistamiento` | Cruce del país de la organización con `country_code`. |
+| `publicadores` | `top_registradores` | Los 20 textos de `recorded_by` con más registros. El campo no está normalizado: la misma persona puede salir en varias filas. El porcentaje es sobre el total filtrado. |
+
+Estas consultas usan `JSON_EXTRACT` y `JSON_LENGTH` de MySQL 8. No están portadas a SQLite.
+
+Para verlas en consola, el directorio de trabajo es `src/` (ahí resuelven `database` y `kpis`):
+
+```powershell
+cd src
+..\.venv\Scripts\python.exe kpi_volumen.py
+..\.venv\Scripts\python.exe kpi_territorio.py
+..\.venv\Scripts\python.exe kpi_cobertura.py
+..\.venv\Scripts\python.exe kpi_evidencia.py
+..\.venv\Scripts\python.exe kpi_taxonomia.py
+..\.venv\Scripts\python.exe kpi_calidad.py
+..\.venv\Scripts\python.exe kpi_publicadores.py
+```
+
+`python -m kpis.volumen`, desde la misma carpeta, imprime país, año y mes. El lanzador `kpi_volumen.py` añade la serie país-año.
+
+Dentro de otro programa el filtro se pasa en la llamada. Este ejemplo deja solo España en 2018:
+
+```python
+from database import get_session
+from kpis import FiltroKpi
+from kpis.territorio import por_comunidad
+
+with get_session() as session:
+    filas = por_comunidad(session, FiltroKpi(paises=("ES",), anio_min=2018, anio_max=2018))
+```
+
 ---
 
 ## 5. Cuadernos Jupyter y Scripts Ejecutables
@@ -156,6 +239,9 @@ Cuaderno de exploración que opera 100 % contra MySQL sin llamadas a internet:
 
 ### 5.3. `prueba_lectura_mysql.py`
 Script de consola para ejecutar de forma rápida la batería de pruebas de lectura sobre todas las funciones de `src/consulta_gbif.py`.
+
+### 5.4. Indicadores por consola (`src/kpi_*.py`)
+Cada `kpi_*.py` abre `get_session()`, llama a las funciones de su módulo en `src/kpis/` e imprime el resultado. El directorio de trabajo es `src/`. Sin argumentos miden toda la base. Para un país o un año se edita el `FiltroKpi` dentro de `main()`, como en la sección 4.9. Hace falta MySQL en marcha, la base `gbif_biodiversidad` cargada y `.env` en la raíz.
 
 ---
 

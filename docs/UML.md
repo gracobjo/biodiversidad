@@ -21,6 +21,7 @@ flowchart LR
   ana --> CU11[CU-11 Filtrar ocurrencias]
   ana --> CU10[CU-10 Analizar sin red]
   ana --> CU13[CU-13 Validar la muestra]
+  ana --> CU15[CU-15 Medir indicadores de MySQL]
   ing --> CU08[CU-08 Poblar SQLite]
   ing --> CU09[CU-09 Poblar MySQL]
   ing --> CU07[CU-07 Guardar lote multi-especie]
@@ -32,6 +33,7 @@ flowchart LR
   CU08 --> gbif
   CU09 --> gbif
   CU09 --> mysql
+  CU15 --> mysql
   CU07 --> mysql
 ```
 
@@ -62,6 +64,7 @@ flowchart TB
     csqlite[consulta_gbif_sqlite]
     cmysql[consulta_gbif]
     repo[repository]
+    kpis[kpis y kpi_*.py]
     sesion[database.get_session]
     exporta[exportacion_gbif]
     ventana[gui_tk]
@@ -81,6 +84,8 @@ flowchart TB
   offline --> cmysql
   mysqlpy --> sesion
   cmysql --> sesion
+  kpis --> sesion
+  kpis --> repo
   sesion --> repo
   multibd --> salidas[(biodiversidad_gbif.db)]
   sqlite --> datos[(datos/gbif_biodiversidad.sqlite)]
@@ -224,6 +229,81 @@ classDiagram
 ```
 
 `taxon_key`, `dataset_key` y `organization_key` de `Ocurrencia` admiten nulo. Si el registro cita una clave que no está en el catálogo, el repositorio la vacía y la ocurrencia se guarda.
+
+## 3.2. Indicadores de MySQL
+
+Los lanzadores `src/kpi_*.py` abren `get_session()` y llaman al módulo de `src/kpis/` que lleva su nombre. `FiltroKpi` vacío no recorta: la consulta mide toda la base. El filtro reutiliza las cláusulas de `BiodiversidadRepository`.
+
+```mermaid
+classDiagram
+  class FiltroKpi {
+    +paises
+    +anio_min
+    +anio_max
+    +fecha_desde
+    +fecha_hasta
+    +comunidad
+    +taxon_key
+    +solo_lobo_silvestre
+  }
+  class Volumen {
+    +por_pais()
+    +por_anio()
+    +por_mes()
+    +por_pais_y_anio()
+  }
+  class Territorio {
+    +por_comunidad()
+    +por_provincia()
+    +por_municipio()
+  }
+  class Cobertura {
+    +cobertura_campos()
+  }
+  class Evidencia {
+    +por_evidencia()
+    +por_vitalidad()
+    +por_sexo()
+    +por_fase_vital()
+    +individuos_declarados()
+  }
+  class Taxonomia {
+    +lobo_y_perro()
+    +por_taxon()
+    +sin_taxon_en_catalogo()
+    +taxones_sin_ocurrencias()
+  }
+  class Calidad {
+    +fotos_y_habitat()
+    +bandas_incertidumbre()
+  }
+  class Publicadores {
+    +por_dataset()
+    +catalogo_datasets()
+    +por_organizacion()
+    +pais_publicador_y_pais_avistamiento()
+    +top_registradores()
+  }
+
+  Volumen --> FiltroKpi
+  Territorio --> FiltroKpi
+  Cobertura --> FiltroKpi
+  Evidencia --> FiltroKpi
+  Taxonomia --> FiltroKpi
+  Calidad --> FiltroKpi
+  Publicadores --> FiltroKpi
+  FiltroKpi --> BiodiversidadRepository : condiciones del filtro
+  Volumen --> Ocurrencia
+  Territorio --> Ocurrencia
+  Cobertura --> Ocurrencia
+  Evidencia --> Ocurrencia
+  Taxonomia --> Ocurrencia
+  Taxonomia --> Taxon
+  Calidad --> Ocurrencia
+  Publicadores --> Ocurrencia
+  Publicadores --> Dataset
+  Publicadores --> Organizacion
+```
 
 ## 4. Secuencia: poblar SQLite desde la interfaz
 

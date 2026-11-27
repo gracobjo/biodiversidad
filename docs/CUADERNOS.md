@@ -15,6 +15,8 @@ Ejecución habitual:
 
 Hay dos ventanas de escritorio, ninguna es un cuaderno. `python app_tkinter.py` abre la de MySQL: ingesta y consultas pasan por el ORM (`get_session` y `BiodiversidadRepository`). `python interfaz_gbif.py` abre la ventana que también usa SQLite y exporta CSV, JSON y HTML. Antes de poblar o consultar, la base tiene que estar iniciada: en SQLite, el archivo `datos/gbif_biodiversidad.sqlite` con el esquema creado; en MySQL, el servidor en marcha, la base `gbif_biodiversidad` creada y `.env` con la conexión.
 
+Los indicadores de esa base MySQL tampoco son un cuaderno. Desde `src/` se lanzan `kpi_volumen.py`, `kpi_territorio.py`, `kpi_cobertura.py`, `kpi_evidencia.py`, `kpi_taxonomia.py`, `kpi_calidad.py` y `kpi_publicadores.py`. El detalle está en la sección 4.9 de `documentacion_del_pipeline_gbif_y_mysql_8.md`.
+
 ## Cuál usar
 
 Los cuatro cuadernos de exploración llevan un número. Abre el **01** primero. El **04** es el archivo de la primera versión: no empieces por ahí.

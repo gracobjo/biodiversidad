@@ -22,6 +22,7 @@ Actores: persona investigadora, persona analista, persona ingeniera de datos. La
 | CU-12 | Exportar tabla y mapa | Investigadora | RF-09, RF-10, RF-19 | interfaz o celda de exportación del cuaderno |
 | CU-13 | Validar calidad de la muestra | Analista | RF-05, RF-07 | cuadernos de exploración y diccionario de datos |
 | CU-14 | Ver especies de varias clases | Investigadora | RF-21 | interfaz o `gbif_especies_por_clase_es_pt.ipynb` |
+| CU-15 | Medir indicadores de MySQL | Analista | RF-22 | `src/kpi_*.py` y `src/kpis/` |
 
 ## CU-01 Explorar una especie en España
 
@@ -169,3 +170,19 @@ Actores: persona investigadora, persona analista, persona ingeniera de datos. La
 4. Ver taxón, Ver ocurrencias, Poblar, las consultas y la exportación usan esa especie.
 
 **Postcondición.** El cuaderno, al terminar, guarda `salidas_gbif_multiespecie/especies_por_clase_es_pt.csv`. No descarga ocurrencias.
+
+## CU-15 Medir indicadores de MySQL
+
+**Disparador.** Hay que saber cómo está repartida la base ya cargada: por país y año, por territorio, por campo informado, por evidencia, por taxón, por calidad de la coordenada o por quien publica.
+
+**Precondición.** CU-09 ya cargó datos. MySQL 8 está en marcha y `.env` apunta a `gbif_biodiversidad`.
+
+**Flujo.**
+
+1. Desde `src/`, lanza el tema: `..\.venv\Scripts\python.exe kpi_volumen.py` (y, con el mismo patrón, `kpi_territorio.py`, `kpi_cobertura.py`, `kpi_evidencia.py`, `kpi_taxonomia.py`, `kpi_calidad.py` o `kpi_publicadores.py`).
+2. La salida es el recuento de toda la base. Para un país, un año o un intervalo, se pasa un `FiltroKpi` en la llamada, como en la sección 4.9 de [documentacion_del_pipeline_gbif_y_mysql_8.md](./documentacion_del_pipeline_gbif_y_mysql_8.md).
+3. No se abre ninguna conexión con `api.gbif.org` y no se escribe en MySQL.
+
+**Postcondición.** El resultado queda en la consola. El porcentaje de un ranking recortado (municipios, datasets con límite, registradores) se lee sobre el total filtrado.
+
+**Lectura.** Un conteo de ocurrencias es esfuerzo de publicación. La suma de `individual_count` no es un censo. «Sin dato» entra en los porcentajes de vitalidad, sexo y fase vital.

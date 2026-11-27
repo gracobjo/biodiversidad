@@ -79,17 +79,17 @@ Bienvenido a la documentación completa del proyecto de exploración de biodiver
 Qué hace cada `.ipynb` de `notebooks/`, cuándo usarlo y dónde deja CSV, JSON, HTML y bases de datos. Distingue `gbif_multiespecie_es_pt.ipynb` de `gbif_multiespecie_es_pt_sqlite_mysql.ipynb`.
 
 ### 5. **[ESPECIFICACION_REQUISITOS.md](./ESPECIFICACION_REQUISITOS.md)**
-Requisitos funcionales RF-01 a RF-21 y no funcionales, incluidos persistencia, interfaz, filtro de ocurrencias y catálogo por clase.
+Requisitos funcionales RF-01 a RF-22 y no funcionales, incluidos persistencia, interfaz, filtro de ocurrencias, catálogo por clase e indicadores de MySQL.
 
 ### 6. **[CASOS_DE_USO.md](./CASOS_DE_USO.md)**
-Catorce casos, del cuaderno de mortalidad al catálogo por clases, la carga SQLite/MySQL y el filtro de la tabla ya visible.
+Quince casos, del cuaderno de mortalidad al catálogo por clases, la carga SQLite/MySQL, los indicadores de la base y el filtro de la tabla ya visible.
 
 ### 7. **[UML.md](./UML.md)**
-Casos de uso, componentes, la ventana ORM (`app_tkinter.py`, `BiodiversidadRepository` y las entidades de `models.py`), secuencias de ingesta y de filtrado, actividad y los dos modelos entidad-relación.
+Casos de uso, componentes, la ventana ORM (`app_tkinter.py`, `BiodiversidadRepository` y las entidades de `models.py`), los indicadores de `src/kpis/`, secuencias de ingesta y de filtrado, actividad y los dos modelos entidad-relación.
 
 ### 8. Pipelines
 - [documentacion_del_pipeline_gbif_y_sqlite.md](./documentacion_del_pipeline_gbif_y_sqlite.md)
-- [documentacion_del_pipeline_gbif_y_mysql_8.md](./documentacion_del_pipeline_gbif_y_mysql_8.md)
+- [documentacion_del_pipeline_gbif_y_mysql_8.md](./documentacion_del_pipeline_gbif_y_mysql_8.md). La sección 4.9 describe los indicadores de `src/kpis/` y cómo lanzarlos con `src/kpi_*.py`.
 
 ---
 
@@ -204,6 +204,7 @@ Si encuentras:
 | Versión | Fecha | Cambios |
 |---------|-------|---------|
 | 1.0 | 2026-11-22 | Creación inicial: MANUAL_USUARIO.md, GUIA_API_GBIF.md, este índice |
+| 1.1 | 2026-11-27 | Indicadores de MySQL: `src/kpis/`, lanzadores `src/kpi_*.py`, RF-22 y CU-15 |
 
 ---
 
@@ -215,7 +216,7 @@ Si encuentras:
 
 ---
 
-**Última actualización:** 2026-11-22  
+**Última actualización:** 2026-11-27  
 **Ubicación:** `docs/` (esta carpeta)
 
 ---

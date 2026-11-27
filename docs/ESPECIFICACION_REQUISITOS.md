@@ -15,6 +15,7 @@ Dentro del alcance:
 - Exportar CSV, JSON y mapas HTML.
 - Persistir de forma idempotente en SQLite o en MySQL 8.
 - Consultar la base local sin volver a llamar a la API.
+- Calcular indicadores de la base MySQL (volumen, territorio, cobertura, evidencia, taxonomía, calidad y publicadores), sobre toda la base o acotados por país y por tiempo.
 - Filtrar un listado de ocurrencias ya cargado por país, año, provincia y epíteto.
 - Repetir la descarga para un catálogo corto de especies y compararlas en un mapa.
 
@@ -79,6 +80,12 @@ Fuera del alcance:
 | RF-20 | Con un listado de ocurrencias ya en pantalla, se puede filtrar por `country_code`, `year`, `state_province` y `specific_epithet`. País y año son exactos. Provincia y epíteto admiten un fragmento, sin distinguir mayúsculas ni tildes. Quitar el filtro restaura el listado cargado. |
 | RF-21 | El catálogo de especies con coordenadas muestra cinco especies de Mammalia, Squamata, Amphibia, Insecta, Magnoliopsida, Liliopsida y Aves, con clase y familia, aunque no sean las más registradas del país. |
 
+### Indicadores de la base MySQL
+
+| ID | Requisito |
+|---|---|
+| RF-22 | Sobre MySQL ya cargada, `src/kpis/` calcula volumen, territorio GADM, cobertura de campos, evidencia y vitalidad, lobo frente a perro, fotografía, hábitat, incertidumbre de la coordenada y publicadores. Cada tema se imprime desde `src/` con `kpi_volumen.py`, `kpi_territorio.py`, `kpi_cobertura.py`, `kpi_evidencia.py`, `kpi_taxonomia.py`, `kpi_calidad.py` o `kpi_publicadores.py`. Sin `FiltroKpi` miden toda la base. Con él, el recorte es el de RF-04. Un conteo de ocurrencias mide esfuerzo de publicación, no abundancia. Estas consultas no están en SQLite. |
+
 ## 4. Requisitos no funcionales
 
 | ID | Requisito |
@@ -116,7 +123,7 @@ Modelo del cuaderno multi-especie con base de datos: `taxones`, `ocurrencias`, `
 | `https://api.gbif.org/v1/occurrence/search` | Ocurrencias. `limit` ≤ 300. |
 | `https://api.gbif.org/v1/organization/{key}` | Institución publicadora, solo en la ingesta de `src/`. |
 | `https://api.gbif.org/v1/dataset/{key}` | Metadatos del dataset, solo en la ingesta de `src/`. |
-| MySQL 8, host y credenciales de `.env` (`app_tkinter.py`, cuadernos y `interfaz_gbif.py`) | Destino opcional. La sesión la abre `src/database.get_session`. |
+| MySQL 8, host y credenciales de `.env` (`app_tkinter.py`, cuadernos, `interfaz_gbif.py` y `src/kpi_*.py`) | Destino opcional. La sesión la abre `src/database.get_session`. |
 | Sistema de archivos | `datos/`, `salidas_gbif_multiespecie/`, `notebooks/`. |
 
 ## 7. Restricciones

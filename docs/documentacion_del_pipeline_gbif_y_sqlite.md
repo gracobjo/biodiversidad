@@ -1,6 +1,6 @@
 # Documentación Técnica: Pipeline ETL y Análisis Offline de Biodiversidad (GBIF + SQLite)
 
-Documento paralelo a [`documentacion_del_pipeline_gbif_y_mysql_8.md`](./documentacion_del_pipeline_gbif_y_mysql_8.md). El diseño de tablas, el orden de carga y la capa de consulta son los mismos. Cambia el motor: el archivo `datos/gbif_biodiversidad.sqlite`, sin servidor ni credenciales.
+Documento paralelo a [`documentacion_del_pipeline_gbif_y_mysql_8.md`](./documentacion_del_pipeline_gbif_y_mysql_8.md). El diseño de tablas, el orden de carga y la capa de consulta son los mismos. Cambia el motor: el archivo `datos/gbif_biodiversidad.sqlite`, sin servidor ni credenciales. Los indicadores de `src/kpis/` leen MySQL: usan funciones JSON de ese motor y no se lanzan contra este archivo.
 
 La base tiene que estar iniciada antes de poblarla o consultarla. Iniciarla es crear el archivo y aplicar el esquema (sección 3, o el botón Crear de la interfaz). El archivo de la raíz del proyecto, `gbif_biodiversidad.sqlite`, no es esa base: la interfaz y `src/` no lo leen ni lo escriben.
 
