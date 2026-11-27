@@ -198,6 +198,7 @@ Si encuentras:
 | 1.1 | 2026-11-27 | Indicadores de MySQL: `src/kpis/`, lanzadores `src/kpi_*.py`, RF-22 y CU-15 |
 | 1.2 | 2026-11-27 | Pestaña Indicadores en la ventana de MySQL |
 | 1.3 | 2026-11-27 | El alcance de la aplicación deja de presentarse como solo el estudio del lobo. La muestra de 600 registros queda acotada al cuaderno 01 |
+| 1.4 | 2026-11-27 | Traer datos explica la descarga y carga especies disponibles para esos países y ese periodo |
 
 ---
 

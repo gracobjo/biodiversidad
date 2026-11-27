@@ -1,6 +1,6 @@
 # Fase A: Ingesta de Datos GBIF a MySQL 8
 
-Este cuaderno ejecuta la extracción desde la API pública de GBIF (`/v1/species/match`, `/v1/occurrence/search` y catálogos del *Registry*) y persiste los datos de forma idempotente en `gbif_biodiversidad`. `guardar_en_mysql` abre `get_session()` y escribe con `BiodiversidadRepository`. La misma carga está en la pestaña Traer datos de GBIF de `python app_tkinter.py`.
+Este cuaderno ejecuta la extracción desde la API pública de GBIF (`/v1/species/match`, `/v1/occurrence/search` y catálogos del *Registry*) y persiste los datos de forma idempotente en `gbif_biodiversidad`. `guardar_en_mysql` abre `get_session()` y escribe con `BiodiversidadRepository`. La misma carga está en la pestaña Traer datos de GBIF de `python app_tkinter.py`, que explica esos pasos y puede listar hasta cinco especies de cada clase antes de descargar.
 
 ```python
 import importlib

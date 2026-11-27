@@ -21,7 +21,7 @@ Actores: persona investigadora, persona analista, persona ingeniera de datos. La
 | CU-11 | Filtrar ocurrencias ya vistas | Analista | RF-20 | interfaz, barra sobre la tabla |
 | CU-12 | Exportar tabla y mapa | Investigadora | RF-09, RF-10, RF-19 | interfaz o celda de exportación del cuaderno |
 | CU-13 | Validar calidad de la muestra | Analista | RF-05, RF-07 | cuadernos de exploración y diccionario de datos |
-| CU-14 | Ver especies de varias clases | Investigadora | RF-21 | interfaz o `gbif_especies_por_clase_es_pt.ipynb` |
+| CU-14 | Ver especies de varias clases | Investigadora | RF-21 | interfaz, Traer datos de `app_tkinter.py` o `gbif_especies_por_clase_es_pt.ipynb` |
 | CU-15 | Medir indicadores de MySQL | Analista | RF-22 | pestaña Indicadores de `app_tkinter.py`, o `src/kpi_*.py` |
 
 ## CU-01 Explorar una especie en España
@@ -104,7 +104,7 @@ Actores: persona investigadora, persona analista, persona ingeniera de datos. La
 **Flujo.**
 
 1. Aplica `docs/schema_gbif.sql`.
-2. Ejecuta `notebooks/ingesta_gbif_mysql.ipynb`, la pestaña Traer datos de GBIF de `python app_tkinter.py`, o en `interfaz_gbif.py` elige MySQL y pulsa Crear y Poblar. Las tres vías terminan en el repositorio ORM.
+2. Ejecuta `notebooks/ingesta_gbif_mysql.ipynb`, la pestaña Traer datos de GBIF de `python app_tkinter.py`, o en `interfaz_gbif.py` elige MySQL y pulsa Crear y Poblar. Las tres vías terminan en el repositorio ORM. En Traer datos, el texto de la pestaña y el detalle de la descarga dicen el orden: `/v1/species/match`, `/v1/occurrence/search` por país con coordenadas y el periodo escrito, organización, dataset y escritura en MySQL. Cargar especies disponibles lista hasta cinco especies de cada clase para esos países y esas fechas; pulsar una fila rellena Especie. Cancelar antes de guardar no escribe.
 3. Ejecuta `notebooks/analisis_offline_gbif.ipynb`, la pestaña Consultar de `app_tkinter.py` o las consultas de `interfaz_gbif.py`. En Consultar se puede elegir cualquier país ya guardado, un año concreto o un intervalo de fechas.
 
 **Excepción.** Si la conexión es rechazada, no se escribe nada. SQLite sigue siendo utilizable.
@@ -164,9 +164,9 @@ Actores: persona investigadora, persona analista, persona ingeniera de datos. La
 
 **Flujo.**
 
-1. En la interfaz, pulsa Especies con coordenadas, o abre `notebooks/gbif_especies_por_clase_es_pt.ipynb` y ejecuta las celdas.
+1. En `interfaz_gbif.py` pulsa Especies con coordenadas, en Traer datos de GBIF de `app_tkinter.py` pulsa Cargar especies disponibles, o abre `notebooks/gbif_especies_por_clase_es_pt.ipynb` y ejecuta las celdas. En Traer datos el listado usa los países y el periodo ya escritos.
 2. La tabla muestra cinco especies por clase, con clase, familia y ocurrencias con coordenadas. Si una clase no responde, se omite y el listado sigue.
-3. Al pulsar una fila de la interfaz, el nombre pasa al cuadro superior. Limpiar devuelve *Canis lupus*.
+3. Al pulsar una fila de `interfaz_gbif.py`, el nombre pasa al cuadro superior. Limpiar devuelve *Canis lupus*. En Traer datos, pulsar una fila rellena el campo Especie de esa pestaña.
 4. Ver taxón, Ver ocurrencias, Poblar, las consultas y la exportación usan esa especie.
 
 **Postcondición.** El cuaderno, al terminar, guarda `salidas_gbif_multiespecie/especies_por_clase_es_pt.csv`. No descarga ocurrencias.

@@ -75,10 +75,10 @@ Fuera del alcance:
 | ID | Requisito |
 |---|---|
 | RF-17 | La interfaz muestra el resultado de `/v1/species/match` y de `/v1/occurrence/search`. |
-| RF-18 | Permite crear y poblar la base elegida (SQLite o MySQL) con los parámetros de la ventana. La base tiene que estar iniciada: archivo SQLite creado o servidor MySQL en marcha con la base creada. |
+| RF-18 | Permite crear y poblar la base elegida (SQLite o MySQL) con los parámetros de la ventana. En Traer datos de GBIF se ve el orden: resolver el nombre, paginar ocurrencias con coordenadas, pedir organización y dataset, y guardar. Se puede cancelar antes de escribir. La base tiene que estar iniciada: archivo SQLite creado o servidor MySQL en marcha con la base creada. |
 | RF-19 | Permite lanzar las consultas de RF-15, limitadas a la especie elegida, y exportar la tabla de esa especie a CSV, JSON y HTML. El nombre del fichero y el contenido identifican la especie. |
 | RF-20 | Con un listado de ocurrencias ya en pantalla, se puede filtrar por `country_code`, `year`, `state_province` y `specific_epithet`. País y año son exactos. Provincia y epíteto admiten un fragmento, sin distinguir mayúsculas ni tildes. Quitar el filtro restaura el listado cargado. |
-| RF-21 | El catálogo de especies con coordenadas muestra cinco especies de Mammalia, Squamata, Amphibia, Insecta, Magnoliopsida, Liliopsida y Aves, con clase y familia, aunque no sean las más registradas del país. |
+| RF-21 | El catálogo de especies con coordenadas muestra cinco especies de Mammalia, Squamata, Amphibia, Insecta, Magnoliopsida, Liliopsida y Aves, con clase y familia, aunque no sean las más registradas del país. En Traer datos de GBIF, Cargar especies disponibles usa los países y el periodo de esa pestaña; pulsar una fila deja ese nombre como especie a descargar. |
 
 ### Indicadores de la base MySQL
 

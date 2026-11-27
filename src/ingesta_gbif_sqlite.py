@@ -67,12 +67,14 @@ def listar_especies_con_coordenadas(
     year_range: str | None = None,
     limite: int = ESPECIES_POR_CLASE,
     on_progreso=None,
+    event_date: str | None = None,
 ) -> list[dict]:
     """Especies con coordenadas: cinco de cada clase, no solo las más numerosas.
 
     La clave de cada clase sale de GET /v1/species/match?rank=CLASS.
     Las especies, de GET /v1/occurrence/search con classKey, facet=speciesKey
-    y hasCoordinate=true. El nombre y la familia salen de GET /v1/species/{speciesKey}.
+    y hasCoordinate=true. year_range y event_date se añaden a esa búsqueda si vienen rellenos.
+    El nombre y la familia salen de GET /v1/species/{speciesKey}.
     """
     paises_consulta = list(paises or PAISES)
     sesion = _sesion_catalogo()
@@ -86,6 +88,8 @@ def listar_especies_con_coordenadas(
         base.extend(("country", pais) for pais in paises_consulta)
         if year_range:
             base.append(("year", year_range))
+        if event_date:
+            base.append(("eventDate", event_date))
         return base
 
     pendientes: list[tuple[str, int]] = []

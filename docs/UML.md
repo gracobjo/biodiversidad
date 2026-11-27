@@ -173,6 +173,7 @@ classDiagram
     +ver_mapa()
     +exportar_csv()
     +descargar()
+    +cargar_especies_disponibles()
     +abrir_ficha()
     +calcular_indicadores()
   }

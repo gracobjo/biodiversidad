@@ -63,7 +63,7 @@ Archivo de la primera exploración ibérica. Antes se llamaba `exploracion_biodi
 
 ### `ingesta_gbif_mysql.ipynb`
 
-Fase A del pipeline MySQL descrito en `documentacion_del_pipeline_gbif_y_mysql_8.md`. Resuelve el taxón, pagina ocurrencias (por defecto *Canis lupus*, ES y PT, 2000–2026, máximo 1.000 por país) y llama a `guardar_en_mysql`, que escribe con el ORM. La primera celda recarga `repository` y `volcarEndpoints` para que el kernel coja el código nuevo. Hace falta MySQL 8, el esquema `docs/schema_gbif.sql` y `.env`. La misma ingesta está en la pestaña Traer datos de GBIF de `python app_tkinter.py`, donde el país puede ser cualquier código ISO y el tiempo un año, un intervalo de años o un intervalo de fechas.
+Fase A del pipeline MySQL descrito en `documentacion_del_pipeline_gbif_y_mysql_8.md`. Resuelve el taxón, pagina ocurrencias (por defecto *Canis lupus*, ES y PT, 2000–2026, máximo 1.000 por país) y llama a `guardar_en_mysql`, que escribe con el ORM. La primera celda recarga `repository` y `volcarEndpoints` para que el kernel coja el código nuevo. Hace falta MySQL 8, el esquema `docs/schema_gbif.sql` y `.env`. La misma ingesta está en la pestaña Traer datos de GBIF de `python app_tkinter.py`, donde el país puede ser cualquier código ISO y el tiempo un año, un intervalo de años o un intervalo de fechas. Esa pestaña explica los pasos de la descarga. Cargar especies disponibles lista hasta cinco especies de cada clase, con coordenadas, para esos países y ese periodo; pulsar una fila rellena la especie.
 
 ### `analisis_offline_gbif.ipynb`
 

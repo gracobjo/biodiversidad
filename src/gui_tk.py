@@ -15,6 +15,7 @@ from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
 from database import get_session
+from ingesta_gbif_sqlite import listar_especies_con_coordenadas
 from exportacion_gbif import CARPETA_SALIDAS, exportar_csv, exportar_mapa_html
 from kpis import FiltroKpi
 from kpis.vista import NodoIndicador, TEMAS, filas_indicador
@@ -49,6 +50,7 @@ class BiodiversidadApp(tk.Tk):
         self.minsize(980, 640)
 
         self._cola_logs: list[str] = []
+        self._cola_ui: list = []
         self._cola_lock = threading.Lock()
         self._cancelar = threading.Event()
         self._bd_ok = False
@@ -354,10 +356,47 @@ class BiodiversidadApp(tk.Tk):
         self.btn_descargar.grid(row=1, column=2, columnspan=2, padx=(0, 6), pady=(8, 0), sticky="w")
         self.btn_cancelar = ttk.Button(params, text="Cancelar", command=self._cancelar.set, state="disabled")
         self.btn_cancelar.grid(row=1, column=4, pady=(8, 0), sticky="w")
+        self.btn_especies = ttk.Button(params, text="Cargar especies disponibles", command=self.cargar_especies_disponibles)
+        self.btn_especies.grid(row=1, column=5, columnspan=2, padx=(8, 0), pady=(8, 0), sticky="w")
         ttk.Label(
             params,
-            text="Cualquier código ISO (FR, IT, MA). Fechas como en Consultar: 2018 o 2018-03-01.",
-        ).grid(row=1, column=5, columnspan=4, padx=(8, 0), pady=(8, 0), sticky="w")
+            text="País: FR o ES, PT. Fecha: 2018 o 2018-03-01.",
+        ).grid(row=1, column=7, columnspan=2, padx=(8, 0), pady=(8, 0), sticky="w")
+
+        como = ttk.Label(
+            self.tab_descarga,
+            text=(
+                "Cómo se traen: el nombre se resuelve en /v1/species/match. "
+                "Por cada país se pagina /v1/occurrence/search, solo con coordenadas y con el periodo de arriba, "
+                "hasta el máximo. Después se piden la organización y el dataset de esos registros "
+                "y se guardan en MySQL el taxón, las organizaciones, los datasets y las ocurrencias. "
+                "Cargar especies disponibles lista hasta cinco especies de cada clase con coordenadas "
+                "para esos países y ese periodo. Pulsa una fila para rellenar Especie."
+            ),
+            wraplength=1080,
+            justify="left",
+        )
+        como.pack(fill="x", pady=(0, 8))
+
+        marco_especies = ttk.LabelFrame(self.tab_descarga, text="Especies con coordenadas", padding=8)
+        marco_especies.pack(fill="both", expand=True, pady=(0, 8))
+        columnas_esp = ("clase", "familia", "especie", "registros")
+        self.tree_especies = ttk.Treeview(marco_especies, columns=columnas_esp, show="headings", selectmode="browse", height=8)
+        for col, texto, ancho in (
+            ("clase", "Clase", 140),
+            ("familia", "Familia", 160),
+            ("especie", "Especie", 220),
+            ("registros", "Con coordenadas", 120),
+        ):
+            self.tree_especies.heading(col, text=texto)
+            self.tree_especies.column(col, width=ancho, anchor="w")
+        self.tree_especies.column("registros", anchor="e")
+        scroll_esp = ttk.Scrollbar(marco_especies, orient="vertical", command=self.tree_especies.yview)
+        self.tree_especies.configure(yscrollcommand=scroll_esp.set)
+        self.tree_especies.pack(side="left", fill="both", expand=True)
+        scroll_esp.pack(side="right", fill="y")
+        self.tree_especies.insert("", "end", iid="vacio", values=("", "", "Pulsa Cargar especies disponibles.", ""))
+        self.tree_especies.bind("<<TreeviewSelect>>", self._usar_especie_catalogo)
 
         progreso = ttk.Frame(self.tab_descarga)
         progreso.pack(fill="x", pady=(0, 8))
@@ -948,16 +987,24 @@ class BiodiversidadApp(tk.Tk):
         with self._cola_lock:
             self._cola_logs.append(mensaje)
 
+    def _en_principal(self, accion) -> None:
+        with self._cola_lock:
+            self._cola_ui.append(accion)
+
     def _procesar_cola_logs(self) -> None:
         with self._cola_lock:
             pendientes = self._cola_logs[:]
             self._cola_logs.clear()
+            tareas = self._cola_ui[:]
+            self._cola_ui.clear()
         if pendientes:
             self.txt_log.configure(state="normal")
             for msg in pendientes:
                 self.txt_log.insert("end", msg + "\n")
             self.txt_log.see("end")
             self.txt_log.configure(state="disabled")
+        for tarea in tareas:
+            tarea()
         self.after(150, self._procesar_cola_logs)
 
     def _poner_progreso(self, valor: int, maximo: int, texto: str) -> None:
@@ -965,33 +1012,113 @@ class BiodiversidadApp(tk.Tk):
             self.barra_progreso.configure(maximum=max(maximo, 1), value=min(valor, max(maximo, 1)))
             self.lbl_progreso.configure(text=texto)
 
-        self.after(0, aplicar)
+        self._en_principal(aplicar)
+
+    def _paises_ingesta(self) -> list[str]:
+        paises = [p.strip().upper() for p in self.var_paises_ing.get().split(",") if p.strip()]
+        if not paises:
+            raise ValueError("Indica al menos un código de país, por ejemplo FR o ES, PT.")
+        if any(len(pais) != 2 or not pais.isalpha() for pais in paises):
+            raise ValueError("Cada país es un código de dos letras: FR, IT, MA, ES.")
+        return paises
+
+    def _usar_especie_catalogo(self, _evento=None) -> None:
+        seleccion = self.tree_especies.selection()
+        if not seleccion or seleccion[0] == "vacio":
+            return
+        nombre = self.tree_especies.set(seleccion[0], "especie")
+        if nombre:
+            self.var_especie_ing.set(nombre)
+
+    def cargar_especies_disponibles(self) -> None:
+        try:
+            paises = self._paises_ingesta()
+            filtro = self._filtro_gbif(self.var_desde_ing, self.var_hasta_ing)
+        except ValueError as exc:
+            messagebox.showwarning("Revisa el filtro", str(exc))
+            return
+        self.btn_especies.configure(state="disabled")
+        self.btn_descargar.configure(state="disabled")
+        self._poner_progreso(0, 1, "Buscando especies con coordenadas en GBIF...")
+        hilo = threading.Thread(target=self._worker_especies, args=(paises, filtro), daemon=True)
+        hilo.start()
+
+    def _worker_especies(self, paises: list[str], filtro: dict[str, str]) -> None:
+        try:
+            especies = listar_especies_con_coordenadas(
+                paises=paises,
+                year_range=filtro.get("year"),
+                event_date=filtro.get("eventDate"),
+                on_progreso=lambda mensaje: self._en_principal(
+                    lambda texto=mensaje: self.lbl_progreso.configure(text=texto)
+                ),
+            )
+            self._en_principal(lambda: self._pintar_especies(especies, paises, filtro))
+        except Exception as exc:
+            error = str(exc)
+            self._en_principal(lambda mensaje=error: messagebox.showerror("Especies disponibles", mensaje))
+            self._en_principal(lambda: self.lbl_progreso.configure(text="No se pudo cargar el listado de especies."))
+        finally:
+            self._en_principal(lambda: self.btn_especies.configure(state="normal"))
+            self._en_principal(lambda: self.btn_descargar.configure(state="normal"))
+
+    def _pintar_especies(self, especies: list[dict], paises: list[str], filtro: dict[str, str]) -> None:
+        hijos = self.tree_especies.get_children()
+        if hijos:
+            self.tree_especies.delete(*hijos)
+        if not especies:
+            self.tree_especies.insert("", "end", iid="vacio", values=("", "", "GBIF no ha devuelto especies.", ""))
+            self.lbl_progreso.configure(text="Sin especies para esos países y ese periodo.")
+            return
+        for indice, especie in enumerate(especies):
+            self.tree_especies.insert(
+                "",
+                "end",
+                iid=f"esp-{indice}",
+                values=(
+                    especie.get("clase") or "",
+                    especie.get("familia") or "",
+                    especie.get("nombre_cientifico") or "",
+                    f"{int(especie.get('ocurrencias_con_coordenadas') or 0):,}",
+                ),
+            )
+        periodo = filtro.get("year") or filtro.get("eventDate") or "sin filtro de fecha"
+        self.lbl_progreso.configure(
+            text=(
+                f"{len(especies)} especies con coordenadas en {', '.join(paises)} ({periodo}). "
+                "Hasta cinco de cada clase. Pulsa una fila para usarla."
+            )
+        )
 
     def iniciar_descarga(self) -> None:
         especie = self.var_especie_ing.get().strip()
-        paises = [p.strip().upper() for p in self.var_paises_ing.get().split(",") if p.strip()]
         try:
+            paises = self._paises_ingesta()
             filtro_fecha = self._filtro_gbif(self.var_desde_ing, self.var_hasta_ing)
         except ValueError as exc:
-            messagebox.showwarning("Revisa las fechas", str(exc))
+            messagebox.showwarning("Revisa el filtro", str(exc))
             return
         max_txt = self.var_max_ing.get().strip()
         if max_txt and (not max_txt.isdigit() or int(max_txt) < 1):
             messagebox.showwarning("Revisa el máximo", "El máximo por país tiene que ser un número entero, o quedar vacío para traer todo.")
             return
         max_por_pais = int(max_txt) if max_txt else None
-        if not especie or not paises:
-            messagebox.showwarning("Faltan datos", "Indica la especie y al menos un código de país, por ejemplo FR o ES,PT.")
-            return
-        if any(len(pais) != 2 or not pais.isalpha() for pais in paises):
-            messagebox.showwarning("Revisa el país", "Cada país es un código de dos letras: FR, IT, MA, ES.")
+        if not especie:
+            messagebox.showwarning("Falta la especie", "Escribe un nombre científico o pulsa una fila del listado.")
             return
         self._cancelar.clear()
         self.btn_descargar.configure(state="disabled")
+        self.btn_especies.configure(state="disabled")
         self.btn_cancelar.configure(state="normal")
         self.txt_log.configure(state="normal")
         self.txt_log.delete("1.0", "end")
         self.txt_log.configure(state="disabled")
+        periodo = ", ".join(f"{clave}={valor}" for clave, valor in filtro_fecha.items()) or "sin filtro de fecha"
+        tope = f"{max_por_pais} por país" if max_por_pais else "sin tope por país"
+        self._log(
+            f"Cómo se trae: /v1/species/match?name={especie}. "
+            f"Después, por cada país, /v1/occurrence/search con taxonKey, country, hasCoordinate=true, {periodo}, {tope}."
+        )
         self._poner_progreso(0, 1, "Resolviendo el nombre en GBIF...")
         hilo = threading.Thread(
             target=self._worker_descarga,
@@ -1107,14 +1234,15 @@ class BiodiversidadApp(tk.Tk):
                 "Si alguna citaba un taxón que no está en el catálogo, esa clave quedó vacía y el registro se guardó."
             )
             self._poner_progreso(1, 1, f"Listo: {total:,} ocurrencias guardadas o actualizadas.")
-            self.after(0, self.refrescar_resumen_bd)
-            self.after(0, self.ejecutar_consulta)
+            self._en_principal(self.refrescar_resumen_bd)
+            self._en_principal(self.ejecutar_consulta)
         except Exception as exc:
             self._log(f"No se pudo completar la descarga: {exc}")
             self._poner_progreso(0, 1, "La descarga no se ha completado.")
         finally:
-            self.after(0, lambda: self.btn_descargar.configure(state="normal"))
-            self.after(0, lambda: self.btn_cancelar.configure(state="disabled"))
+            self._en_principal(lambda: self.btn_descargar.configure(state="normal"))
+            self._en_principal(lambda: self.btn_especies.configure(state="normal"))
+            self._en_principal(lambda: self.btn_cancelar.configure(state="disabled"))
 
 
 def lanzar_gui() -> None:
