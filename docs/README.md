@@ -85,7 +85,7 @@ Casos de uso, componentes, la ventana ORM (`app_tkinter.py`, `BiodiversidadRepos
 
 ### 8. Pipelines
 - [documentacion_del_pipeline_gbif_y_sqlite.md](./documentacion_del_pipeline_gbif_y_sqlite.md)
-- [documentacion_del_pipeline_gbif_y_mysql_8.md](./documentacion_del_pipeline_gbif_y_mysql_8.md). La sección 4.9 describe los indicadores de `src/kpis/`, la pestaña Indicadores y los lanzadores `src/kpi_*.py`.
+- [documentacion_del_pipeline_gbif_y_mysql_8.md](./documentacion_del_pipeline_gbif_y_mysql_8.md). La sección 4.9 describe los indicadores de `src/kpis/`, la pestaña Indicadores (tabla y gráfico) y los lanzadores `src/kpi_*.py`.
 
 ---
 
@@ -199,6 +199,7 @@ Si encuentras:
 | 1.2 | 2026-11-27 | Pestaña Indicadores en la ventana de MySQL |
 | 1.3 | 2026-11-27 | El alcance de la aplicación deja de presentarse como solo el estudio del lobo. La muestra de 600 registros queda acotada al cuaderno 01 |
 | 1.4 | 2026-11-27 | Traer datos explica la descarga y carga especies disponibles para esos países y ese periodo |
+| 1.5 | 2026-11-27 | La ventana abre Traer datos, Consultar e Indicadores. El indicador se ve también en gráfico y la tabla se puede contraer |
 
 ---
 

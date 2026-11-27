@@ -265,7 +265,7 @@ Usa diccionario_datos_gbif.md como referencia mientras analizas datos
 1. **Instalar:** Python 3.14 + dependencias (5 min)
 2. **Leer:** INICIO_RAPIDO.md → tu ruta personalizada (20-30 min)
 3. **Ejecutar:** `python app_tkinter.py`, o el cuaderno 01 (10-15 min)
-4. **Explorar:** CSV y mapa de esa muestra, o la pestaña Indicadores sobre la base (5 min)
+4. **Explorar:** CSV y mapa de esa muestra, o la pestaña Indicadores (tabla y gráfico) sobre la base (5 min)
 5. **Cambiar especie, país y periodo:** la ventana y los cuadernos de catálogo y multi-especie ya lo hacen
 
 ---

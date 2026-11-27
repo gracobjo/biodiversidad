@@ -176,6 +176,7 @@ classDiagram
     +cargar_especies_disponibles()
     +abrir_ficha()
     +calcular_indicadores()
+    +alternar_tabla_kpi()
   }
   class Session {
     +commit()
@@ -235,7 +236,7 @@ classDiagram
 
 ## 3.2. Indicadores de MySQL
 
-La pestaña Indicadores llama a `calcular_indicadores()`, que pide las filas a `src/kpis/vista.py`. Los lanzadores `src/kpi_*.py` abren `get_session()` y llaman al módulo de `src/kpis/` que lleva su nombre. `FiltroKpi` vacío no recorta: la consulta mide toda la base. El filtro reutiliza las cláusulas de `BiodiversidadRepository`.
+La pestaña Indicadores llama a `calcular_indicadores()`, que pide las filas a `src/kpis/vista.py` y las figuras a `src/kpis/grafico.py`. La ventana abre por este orden Traer datos de GBIF, Consultar e Indicadores. El gráfico muestra un panel cada vez; la tabla se puede ocultar. Los lanzadores `src/kpi_*.py` abren `get_session()` y llaman al módulo de `src/kpis/` que lleva su nombre, sin dibujar. `FiltroKpi` vacío no recorta: la consulta mide toda la base. El filtro reutiliza las cláusulas de `BiodiversidadRepository`.
 
 ```mermaid
 classDiagram
@@ -287,6 +288,9 @@ classDiagram
     +pais_publicador_y_pais_avistamiento()
     +top_registradores()
   }
+  class Grafico {
+    +figuras_indicador()
+  }
 
   Volumen --> FiltroKpi
   Territorio --> FiltroKpi
@@ -306,6 +310,13 @@ classDiagram
   Publicadores --> Ocurrencia
   Publicadores --> Dataset
   Publicadores --> Organizacion
+  Grafico --> Volumen
+  Grafico --> Territorio
+  Grafico --> Cobertura
+  Grafico --> Evidencia
+  Grafico --> Taxonomia
+  Grafico --> Calidad
+  Grafico --> Publicadores
 ```
 
 ## 4. Secuencia: poblar SQLite desde la interfaz

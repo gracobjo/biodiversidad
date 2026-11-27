@@ -14,10 +14,17 @@ import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
+import matplotlib
+
+matplotlib.use("TkAgg")
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from matplotlib.pyplot import close as cerrar_figura
+
 from database import get_session
 from ingesta_gbif_sqlite import listar_especies_con_coordenadas
 from exportacion_gbif import CARPETA_SALIDAS, exportar_csv, exportar_mapa_html
 from kpis import FiltroKpi
+from kpis.grafico import figuras_indicador
 from kpis.vista import NodoIndicador, TEMAS, filas_indicador
 from models import Ocurrencia
 from repository import BiodiversidadRepository
@@ -61,6 +68,11 @@ class BiodiversidadApp(tk.Tk):
         self._orden_col = "anio"
         self._orden_desc = True
         self._kpi_ocupado = False
+        self._canvas_kpi = None
+        self._paneles_kpi: list = []
+        self._tabla_kpi_visible = True
+        self._kpi_repartido = False
+        self._ajuste_grafico_pendiente = None
 
         self._construir_ui()
         self._procesar_cola_logs()
@@ -83,9 +95,9 @@ class BiodiversidadApp(tk.Tk):
         self.tab_consultar = ttk.Frame(notebook, padding=10)
         self.tab_indicadores = ttk.Frame(notebook, padding=10)
         self.tab_descarga = ttk.Frame(notebook, padding=10)
+        notebook.add(self.tab_descarga, text="Traer datos de GBIF")
         notebook.add(self.tab_consultar, text="Consultar")
         notebook.add(self.tab_indicadores, text="Indicadores")
-        notebook.add(self.tab_descarga, text="Traer datos de GBIF")
         self._construir_tab_consultar()
         self._construir_tab_indicadores()
         self._construir_tab_descarga()
@@ -294,7 +306,10 @@ class BiodiversidadApp(tk.Tk):
         self.temas_kpi.pack(fill="both", expand=True)
         self.temas_kpi.bind("<<TreeviewSelect>>", lambda _e: self.calcular_indicadores())
 
-        marco_tabla = ttk.Frame(cuerpo)
+        marco_derecha = ttk.Panedwindow(cuerpo, orient="vertical")
+        self.marco_derecha_kpi = marco_derecha
+        marco_tabla = ttk.Frame(marco_derecha)
+        self.marco_tabla_kpi = marco_tabla
         self.tree_kpi = ttk.Treeview(
             marco_tabla,
             columns=("detalle", "registros", "porcentaje"),
@@ -319,8 +334,31 @@ class BiodiversidadApp(tk.Tk):
         marco_tabla.columnconfigure(0, weight=1)
         self.tree_kpi.insert("", "end", text="Elige un tema a la izquierda.")
 
+        self.marco_grafico = ttk.LabelFrame(marco_derecha, text="Gráfico", padding=4)
+        cabecera = ttk.Frame(self.marco_grafico)
+        cabecera.pack(fill="x", pady=(0, 4))
+        self.marco_selector_kpi = ttk.Frame(cabecera)
+        self.marco_selector_kpi.pack(side="left", fill="x", expand=True)
+        self.var_panel_kpi = tk.IntVar(value=0)
+        self.btn_tabla_kpi = ttk.Button(cabecera, text="Contraer datos", command=self._alternar_tabla_kpi)
+        self.btn_tabla_kpi.pack(side="right")
+        self.lbl_grafico_vacio = ttk.Label(self.marco_grafico, text="El gráfico aparece al calcular un tema.")
+        self.lbl_grafico_vacio.pack(anchor="w")
+        self._vista_grafico = tk.Canvas(self.marco_grafico, highlightthickness=0, borderwidth=0)
+        self._scroll_grafico = ttk.Scrollbar(self.marco_grafico, orient="vertical", command=self._vista_grafico.yview)
+        self._vista_grafico.configure(yscrollcommand=self._scroll_grafico.set)
+        self._scroll_grafico.pack(side="right", fill="y")
+        self._vista_grafico.pack(side="left", fill="both", expand=True)
+        self._marco_lienzo = ttk.Frame(self._vista_grafico)
+        self._marco_lienzo.pack_propagate(False)
+        self._ventana_lienzo = self._vista_grafico.create_window((0, 0), window=self._marco_lienzo, anchor="nw")
+        self._vista_grafico.bind("<Configure>", self._al_redimensionar_grafico)
+        self._vista_grafico.bind("<MouseWheel>", self._rueda_grafico)
+        marco_derecha.add(marco_tabla, weight=1)
+        marco_derecha.add(self.marco_grafico, weight=4)
+
         cuerpo.add(marco_temas, weight=1)
-        cuerpo.add(marco_tabla, weight=4)
+        cuerpo.add(marco_derecha, weight=4)
 
         self.lbl_kpi = ttk.Label(
             self.tab_indicadores,
@@ -571,6 +609,7 @@ class BiodiversidadApp(tk.Tk):
         try:
             with get_session() as session:
                 nodos, estado = filas_indicador(seleccion[0], session, filtro)
+                paneles = figuras_indicador(seleccion[0], session, filtro)
         except Exception as exc:
             self.lbl_kpi.config(text="No se pudo calcular el indicador.")
             messagebox.showerror("Indicadores", str(exc))
@@ -579,7 +618,108 @@ class BiodiversidadApp(tk.Tk):
             self._kpi_ocupado = False
             self.configure(cursor="")
         self._pintar_kpi(nodos)
+        self._mostrar_paneles(paneles)
         self.lbl_kpi.config(text=estado)
+        self.after_idle(self._repartir_paneles_kpi)
+
+    def _alternar_tabla_kpi(self) -> None:
+        if self._tabla_kpi_visible:
+            self.marco_derecha_kpi.forget(self.marco_tabla_kpi)
+            self._tabla_kpi_visible = False
+            self.btn_tabla_kpi.config(text="Mostrar datos")
+        else:
+            self.marco_derecha_kpi.insert(0, self.marco_tabla_kpi, weight=1)
+            self._tabla_kpi_visible = True
+            self.btn_tabla_kpi.config(text="Contraer datos")
+            self.after_idle(self._poner_tabla_corta)
+        self.after(60, self._ajustar_tamano_grafico)
+
+    def _poner_tabla_corta(self) -> None:
+        if not self._tabla_kpi_visible:
+            return
+        alto = self.marco_derecha_kpi.winfo_height()
+        if alto < 240:
+            return
+        self.marco_derecha_kpi.sashpos(0, min(170, int(alto * 0.28)))
+
+    def _repartir_paneles_kpi(self) -> None:
+        if self._kpi_repartido or not self._tabla_kpi_visible:
+            return
+        self._poner_tabla_corta()
+        if self.marco_derecha_kpi.winfo_height() >= 240:
+            self._kpi_repartido = True
+
+    def _cerrar_graficos(self) -> None:
+        if self._canvas_kpi is not None:
+            self._canvas_kpi.get_tk_widget().destroy()
+            self._canvas_kpi = None
+        for _, figura in self._paneles_kpi:
+            cerrar_figura(figura)
+        self._paneles_kpi = []
+
+    def _mostrar_paneles(self, paneles: list) -> None:
+        self._cerrar_graficos()
+        self._paneles_kpi = paneles
+        for hijo in self.marco_selector_kpi.winfo_children():
+            hijo.destroy()
+        self.lbl_grafico_vacio.pack_forget()
+        if len(paneles) > 1:
+            self.var_panel_kpi.set(0)
+            for indice, (titulo, _) in enumerate(paneles):
+                ttk.Radiobutton(
+                    self.marco_selector_kpi,
+                    text=titulo,
+                    value=indice,
+                    variable=self.var_panel_kpi,
+                    command=self._elegir_panel_kpi,
+                ).pack(side="left", padx=(0, 8))
+        self._elegir_panel_kpi()
+
+    def _elegir_panel_kpi(self) -> None:
+        if not self._paneles_kpi:
+            return
+        indice = self.var_panel_kpi.get()
+        if indice >= len(self._paneles_kpi):
+            indice = 0
+            self.var_panel_kpi.set(0)
+        figura = self._paneles_kpi[indice][1]
+        if not hasattr(figura, "_alto_legible"):
+            figura._alto_legible = figura.get_size_inches()[1]
+        if self._canvas_kpi is not None:
+            self._canvas_kpi.get_tk_widget().destroy()
+            self._canvas_kpi = None
+        self._canvas_kpi = FigureCanvasTkAgg(figura, master=self._marco_lienzo)
+        self._canvas_kpi.draw()
+        widget = self._canvas_kpi.get_tk_widget()
+        widget.pack(fill="both", expand=True)
+        widget.bind("<MouseWheel>", self._rueda_grafico)
+        self.after_idle(self._ajustar_tamano_grafico)
+
+    def _al_redimensionar_grafico(self, _evento=None) -> None:
+        if self._ajuste_grafico_pendiente is not None:
+            self.after_cancel(self._ajuste_grafico_pendiente)
+        self._ajuste_grafico_pendiente = self.after(80, self._ajustar_tamano_grafico)
+
+    def _ajustar_tamano_grafico(self) -> None:
+        self._ajuste_grafico_pendiente = None
+        if self._canvas_kpi is None or not self._paneles_kpi:
+            return
+        indice = min(self.var_panel_kpi.get(), len(self._paneles_kpi) - 1)
+        figura = self._paneles_kpi[indice][1]
+        ancho = max(self._vista_grafico.winfo_width(), 320)
+        alto_vista = max(self._vista_grafico.winfo_height(), 160)
+        dpi = figura.get_dpi()
+        alto = max(int(getattr(figura, "_alto_legible", 4.8) * dpi), alto_vista)
+        actual = figura.get_size_inches()
+        self._marco_lienzo.configure(width=ancho, height=alto)
+        self._vista_grafico.itemconfigure(self._ventana_lienzo, width=ancho, height=alto)
+        self._vista_grafico.configure(scrollregion=(0, 0, ancho, alto))
+        if abs(actual[0] - ancho / dpi) > 0.04 or abs(actual[1] - alto / dpi) > 0.04:
+            figura.set_size_inches(ancho / dpi, alto / dpi, forward=True)
+            self._canvas_kpi.draw_idle()
+
+    def _rueda_grafico(self, evento) -> None:
+        self._vista_grafico.yview_scroll(int(-evento.delta / 120), "units")
 
     def _pintar_kpi(self, nodos: list[NodoIndicador]) -> None:
         hijos = self.tree_kpi.get_children()

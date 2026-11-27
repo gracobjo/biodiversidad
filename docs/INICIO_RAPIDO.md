@@ -1,6 +1,6 @@
 # 🚀 Inicio Rápido - Documentación Biodiversidad GBIF
 
-La aplicación consulta cualquier especie de GBIF, en cualquier país y en un año o un intervalo de fechas. Guarda en SQLite o en MySQL, y `python app_tkinter.py` abre Consultar, Indicadores y Traer datos de GBIF. *Canis lupus* en España (2020–2026, 600 registros) es la muestra del cuaderno 01, no el límite del programa.
+La aplicación consulta cualquier especie de GBIF, en cualquier país y en un año o un intervalo de fechas. Guarda en SQLite o en MySQL, y `python app_tkinter.py` abre, por este orden, Traer datos de GBIF, Consultar e Indicadores. *Canis lupus* en España (2020–2026, 600 registros) es la muestra del cuaderno 01, no el límite del programa.
 
 Los apartados de abajo orientan la primera documentación (manual del cuaderno, guía del API y diccionario de esa muestra). El índice vivo es [README.md](./README.md).
 
@@ -40,7 +40,7 @@ Has recibido **3 documentos completos** sobre la exploración de biodiversidad c
     └─ Tiempo: ~15 minutos
 
 2️⃣  Después: abre la ventana o el cuaderno de partida
-    └─ Ventana: python app_tkinter.py (Consultar, Indicadores, Traer datos de GBIF)
+    └─ Ventana: python app_tkinter.py (Traer datos de GBIF, Consultar, Indicadores)
     └─ Cuaderno: notebooks/exploracion_01_canis_lupus_espana_mortalidad.ipynb
     └─ Tiempo: ~10 minutos (descarga) + análisis
 ```

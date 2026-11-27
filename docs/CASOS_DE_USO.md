@@ -179,12 +179,12 @@ Actores: persona investigadora, persona analista, persona ingeniera de datos. La
 
 **Flujo.**
 
-1. Abre `python app_tkinter.py` y entra en Indicadores. La pestaña calcula el volumen de toda la base.
-2. Elige otro tema en la lista, o acota con país, Desde, Hasta y especie, y pulsa Calcular. El mismo valor en Desde y Hasta deja solo ese año o ese día.
+1. Abre `python app_tkinter.py`. La primera pestaña es Traer datos de GBIF; después Consultar e Indicadores. Entra en Indicadores. La pestaña calcula el volumen de toda la base y dibuja el gráfico por país.
+2. Elige otro tema en la lista, o acota con país, Desde, Hasta y especie, y pulsa Calcular. El mismo valor en Desde y Hasta deja solo ese año o ese día. Si el tema tiene varios gráficos, elige cuál ver. Contraer datos oculta la tabla; la división entre tabla y gráfico se puede arrastrar.
 3. No se abre ninguna conexión con `api.gbif.org` y no se escribe en MySQL.
 
 **Alternativa.** Con el entorno activado, desde la raíz, `python src\kpi_volumen.py` (y el mismo patrón para el resto de `kpi_*.py`) imprime el tema en la consola. El recorte se escribe con `FiltroKpi` dentro del script, como en la sección 4.9 de [documentacion_del_pipeline_gbif_y_mysql_8.md](./documentacion_del_pipeline_gbif_y_mysql_8.md).
 
-**Postcondición.** El resultado queda en la pestaña, o en la consola si se usó el script. El porcentaje de un ranking recortado (municipios, datasets con límite, registradores) se lee sobre el total filtrado.
+**Postcondición.** El resultado queda en la tabla y en el gráfico de la pestaña, o en la consola si se usó el script. La consola no dibuja. El porcentaje de un ranking recortado (municipios, datasets con límite, registradores) se lee sobre el total filtrado. El gráfico de territorio muestra 12 filas por nivel y el de publicadores 8; la tabla no se recorta igual.
 
 **Lectura.** Un conteo de ocurrencias es esfuerzo de publicación. La suma de `individual_count` no es un censo. «Sin dato» entra en los porcentajes de vitalidad, sexo y fase vital.
